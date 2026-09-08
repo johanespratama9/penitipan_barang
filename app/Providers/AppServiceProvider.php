@@ -36,5 +36,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Daftarkan ProductPolicy
         Gate::policy(\App\Models\Product::class, \App\Policies\ProductPolicy::class);
+
+        // Daftarkan ConsignmentPolicy
+        Gate::policy(\App\Models\Consignment::class, \App\Policies\ConsignmentPolicy::class);
+
+        // Daftarkan SalePolicy
+        Gate::policy(\App\Models\Sale::class, \App\Policies\SalePolicy::class);
+
+        // Daftarkan ConsignorPaymentPolicy
+        Gate::policy(\App\Models\ConsignorPayment::class, \App\Policies\ConsignorPaymentPolicy::class);
     }
 }

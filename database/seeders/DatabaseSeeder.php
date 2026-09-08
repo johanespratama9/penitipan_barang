@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             ConsignorSeeder::class,
             ProductSeeder::class,
+            ConsignmentSeeder::class,
         ]);
     }
 }

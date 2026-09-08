@@ -75,5 +75,29 @@ class Consignor extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    /**
+     * Daftar dokumen penitipan barang
+     */
+    public function consignments()
+    {
+        return $this->hasMany(Consignment::class);
+    }
+
+    /**
+     * Saldo dan ringkasan pendapatan penitip
+     */
+    public function balance()
+    {
+        return $this->hasOne(ConsignorBalance::class);
+    }
+
+    /**
+     * Riwayat pembayaran yang sudah diterima penitip
+     */
+    public function payments()
+    {
+        return $this->hasMany(ConsignorPayment::class);
+    }
 }
 

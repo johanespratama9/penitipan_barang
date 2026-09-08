@@ -122,5 +122,15 @@ class Product extends Model
     {
         return $query->where('status', 'sold');
     }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function saleItems()
+    {
+        return $this->hasMany(SaleItem::class);
+    }
 }
 
