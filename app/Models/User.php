@@ -21,4 +21,12 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * Profil data penitip jika user merupakan penitip
+     */
+    public function consignor()
+    {
+        return $this->hasOne(Consignor::class);
+    }
 }
