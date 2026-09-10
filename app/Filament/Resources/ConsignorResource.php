@@ -92,8 +92,36 @@ class ConsignorResource extends Resource
                             )
                             ->searchable()
                             ->preload()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->label('Nama Pengguna')
+                                    ->required()
+                                    ->maxLength(255),
+                                TextInput::make('email')
+                                    ->label('Alamat Email')
+                                    ->email()
+                                    ->required()
+                                    ->unique('users', 'email')
+                                    ->maxLength(255),
+                                TextInput::make('password')
+                                    ->label('Password Login')
+                                    ->password()
+                                    ->revealable()
+                                    ->required()
+                                    ->minLength(6),
+                            ])
+                            ->createOptionUsing(function (array $data): int {
+                                $user = User::create([
+                                    'name' => $data['name'],
+                                    'email' => $data['email'],
+                                    'password' => bcrypt($data['password']),
+                                ]);
+                                $user->assignRole('penitip');
+
+                                return $user->id;
+                            })
                             ->nullable()
-                            ->helperText('Hubungkan ke akun user login dengan role penitip (opsional).'),
+                            ->helperText('Hubungkan ke akun user login dengan role penitip. Klik tombol (+) untuk membuat akun baru secara instan.'),
 
                         TextInput::make('name')
                             ->label('Nama Lengkap')

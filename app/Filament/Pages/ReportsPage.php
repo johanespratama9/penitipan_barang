@@ -47,11 +47,17 @@ class ReportsPage extends Page
     public string $activeTab = 'sales';
     public string $startDate = '';
     public string $endDate = '';
+    public string $search = '';
 
     public function mount(): void
     {
         $this->startDate = now()->startOfMonth()->toDateString();
         $this->endDate = now()->toDateString();
+    }
+
+    public function updatedActiveTab(): void
+    {
+        $this->search = '';
     }
 
     public function getSalesReportProperty()
@@ -60,50 +66,80 @@ class ReportsPage extends Page
             ->whereDate('sold_at', '>=', $this->startDate)
             ->whereDate('sold_at', '<=', $this->endDate)
             ->where('status', 'completed')
+            ->when(filled($this->search), function ($query) {
+                $term = trim($this->search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('invoice_number', 'like', "%{$term}%")
+                        ->orWhere('customer_name', 'like', "%{$term}%")
+                        ->orWhere('payment_method', 'like', "%{$term}%")
+                        ->orWhereHas('cashier', fn ($cq) => $cq->where('name', 'like', "%{$term}%"));
+                });
+            })
             ->orderBy('sold_at', 'desc')
             ->get();
     }
 
     public function getConsignorReportProperty()
     {
-        return Consignor::with(['balance', 'products'])->get()->map(function ($c) {
-            $totalProducts = $c->products->count();
-            $soldProducts = $c->products->where('status', 'sold')->count();
-            $balance = $c->balance;
+        return Consignor::with(['balance', 'products'])
+            ->when(filled($this->search), function ($query) {
+                $term = trim($this->search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('code', 'like', "%{$term}%")
+                        ->orWhere('name', 'like', "%{$term}%")
+                        ->orWhere('phone', 'like', "%{$term}%");
+                });
+            })
+            ->get()
+            ->map(function ($c) {
+                $totalProducts = $c->products->count();
+                $soldProducts = $c->products->where('status', 'sold')->count();
+                $balance = $c->balance;
 
-            return [
-                'code' => $c->code,
-                'name' => $c->name,
-                'phone' => $c->phone,
-                'total_products' => $totalProducts,
-                'sold_products' => $soldProducts,
-                'total_sales' => (float) ($balance?->total_sales ?? 0),
-                'total_commission' => (float) ($balance?->total_commission ?? 0),
-                'total_earned' => (float) ($balance?->total_earned ?? 0),
-                'total_paid' => (float) ($balance?->total_paid ?? 0),
-                'balance' => (float) ($balance?->balance ?? 0),
-            ];
-        });
+                return [
+                    'code' => $c->code,
+                    'name' => $c->name,
+                    'phone' => $c->phone,
+                    'total_products' => $totalProducts,
+                    'sold_products' => $soldProducts,
+                    'total_sales' => (float) ($balance?->total_sales ?? 0),
+                    'total_commission' => (float) ($balance?->total_commission ?? 0),
+                    'total_earned' => (float) ($balance?->total_earned ?? 0),
+                    'total_paid' => (float) ($balance?->total_paid ?? 0),
+                    'balance' => (float) ($balance?->balance ?? 0),
+                ];
+            });
     }
 
     public function getProductReportProperty()
     {
-        return Product::with(['category', 'consignor'])->get()->map(function ($p) {
-            $soldQty = SaleItem::where('product_id', $p->id)->sum('quantity');
-            $omzet = SaleItem::where('product_id', $p->id)->sum('subtotal');
+        return Product::with(['category', 'consignor'])
+            ->when(filled($this->search), function ($query) {
+                $term = trim($this->search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('code', 'like', "%{$term}%")
+                        ->orWhere('name', 'like', "%{$term}%")
+                        ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', "%{$term}%"))
+                        ->orWhereHas('consignor', fn ($cq) => $cq->where('name', 'like', "%{$term}%"));
+                });
+            })
+            ->get()
+            ->map(function ($p) {
+                $soldQty = SaleItem::where('product_id', $p->id)->sum('quantity');
+                $omzet = SaleItem::where('product_id', $p->id)->sum('subtotal');
 
-            return [
-                'code' => $p->code,
-                'name' => $p->name,
-                'category' => $p->category?->name ?? '-',
-                'consignor' => $p->consignor?->name ?? '-',
-                'price' => (float) $p->selling_price,
-                'stock' => $p->stock,
-                'sold_qty' => $soldQty,
-                'omzet' => (float) $omzet,
-                'status' => $p->status,
-            ];
-        });
+                return [
+                    'code' => $p->code,
+                    'name' => $p->name,
+                    'category' => $p->category?->name ?? '-',
+                    'consignor' => $p->consignor?->name ?? '-',
+                    'price' => (float) $p->selling_price,
+                    'stock' => $p->stock,
+                    'sold_qty' => $soldQty,
+                    'omzet' => (float) $omzet,
+                    'status' => $p->status,
+                ];
+            });
     }
 
     public function getPaymentReportProperty()
@@ -111,6 +147,16 @@ class ReportsPage extends Page
         return ConsignorPayment::with(['consignor', 'admin'])
             ->whereDate('paid_at', '>=', $this->startDate)
             ->whereDate('paid_at', '<=', $this->endDate)
+            ->when(filled($this->search), function ($query) {
+                $term = trim($this->search);
+                $query->where(function ($q) use ($term) {
+                    $q->where('payment_number', 'like', "%{$term}%")
+                        ->orWhere('reference_number', 'like', "%{$term}%")
+                        ->orWhere('payment_method', 'like', "%{$term}%")
+                        ->orWhereHas('consignor', fn ($cq) => $cq->where('name', 'like', "%{$term}%"))
+                        ->orWhereHas('admin', fn ($aq) => $aq->where('name', 'like', "%{$term}%"));
+                });
+            })
             ->orderBy('paid_at', 'desc')
             ->get();
     }

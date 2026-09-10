@@ -1,516 +1,939 @@
 <x-filament-panels::page>
-    <!-- Include HTML5 QR/Barcode Scanner Script -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <div x-data="posApp()" class="space-y-4">
-        <!-- Top Action Bar: Search, Kamera HP, & Mobile Tab Switcher -->
-        <div class="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
-            <div class="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-                <!-- Barcode Scanner Input Form -->
-                <form wire:submit="scanBarcode" class="flex-1 flex gap-2">
-                    <div class="relative flex-1">
-                        <input
-                            type="text"
-                            wire:model="barcode"
-                            placeholder="Ketik/Scan Barcode..."
-                            class="w-full pl-10 pr-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-primary-500 text-sm"
-                        />
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                            <x-heroicon-o-qr-code class="w-5 h-5" />
-                        </div>
-                    </div>
-                    <button type="submit" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl text-sm font-semibold transition flex items-center gap-1">
-                        Enter
-                    </button>
-                </form>
+    <style>
+        /* ─────────────────────────────────────────────────
+           PALETTE & RESET
+        ───────────────────────────────────────────────── */
+        .pos-app {
+            --navy:     #1B2A4A;
+            --navy-2:   #162240;
+            --navy-3:   #0F1D36;
+            --navy-4:   #0C1829;
+            --border:   #243358;
+            --blue:     #1E6BFA;
+            --blue-h:   #3B82F6;
+            --gold:     #F59E0B;
+            --red:      #EF4444;
+            --muted:    #7E92B2;
+            --text:     #EAF0FB;
+            background: var(--navy-4);
+            color: var(--text);
+            border-radius: 0;
+            padding: 0;
+            min-height: calc(100vh - 6rem);
+            display: flex;
+            flex-direction: column;
+        }
 
-                <!-- Tombol Scan Kamera HP & Search Barang -->
-                <div class="flex items-center gap-2">
-                    <!-- Tombol Buka Kamera Scanner HP -->
-                    <button
-                        type="button"
-                        @click="openScanner()"
-                        class="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center justify-center gap-2 active:scale-95"
-                    >
-                        <x-heroicon-o-camera class="w-5 h-5" />
-                        <span>Scan Kamera HP</span>
-                    </button>
+        /* ─── SVG bulletproof sizing ─── */
+        .pos-app svg {
+            display: inline-block !important;
+            vertical-align: middle !important;
+            flex-shrink: 0 !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+        }
+        .pos-app .ic-xs { width:12px!important; height:12px!important; min-width:12px!important; min-height:12px!important; }
+        .pos-app .ic-sm { width:14px!important; height:14px!important; min-width:14px!important; min-height:14px!important; }
+        .pos-app .ic-md { width:16px!important; height:16px!important; min-width:16px!important; min-height:16px!important; }
+        .pos-app .ic-lg { width:20px!important; height:20px!important; min-width:20px!important; min-height:20px!important; }
 
-                    <!-- Search Input -->
-                    <div class="relative flex-1 sm:w-56">
-                        <input
-                            type="text"
-                            wire:model.live.debounce.300ms="search"
-                            placeholder="Cari nama..."
-                            class="w-full pl-9 pr-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                        />
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                            <x-heroicon-o-magnifying-glass class="w-4 h-4" />
-                        </div>
-                    </div>
+        /* ─── WORKSPACE LAYOUT ─── */
+        .pos-shell {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+        @media (min-width: 1024px) {
+            .pos-shell {
+                flex-direction: row;
+            }
+        }
+
+        /* Left catalog panel */
+        .pos-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Right order panel */
+        .pos-right {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--navy-3);
+            border-left: 1px solid var(--border);
+        }
+        @media (min-width: 1024px) {
+            .pos-right {
+                width: 340px;
+                min-width: 320px;
+                max-width: 360px;
+            }
+        }
+        @media (min-width: 1280px) {
+            .pos-right {
+                width: 360px;
+            }
+        }
+
+        /* ─── Product Grid ─── */
+        .pos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding: 10px;
+        }
+        @media (min-width: 640px) {
+            .pos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px; }
+        }
+        @media (min-width: 1024px) {
+            .pos-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; }
+        }
+        @media (min-width: 1280px) {
+            .pos-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px; }
+        }
+
+        /* Product card */
+        .pos-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            background: var(--navy-2);
+            border: 1px solid var(--border);
+            aspect-ratio: 4/5;
+            display: flex;
+            flex-direction: column;
+            transition: border-color .15s, transform .12s;
+            user-select: none;
+        }
+        .pos-card:hover { border-color: var(--blue); }
+        .pos-card:active { transform: scale(0.97); }
+
+        .pos-card-img {
+            flex: 1;
+            width: 100%;
+            object-fit: cover;
+        }
+        .pos-card-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--navy-2), var(--navy-3));
+            color: var(--border);
+        }
+
+        .pos-card-footer {
+            padding: 6px 8px 6px 8px;
+            background: var(--navy-2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+        .pos-card-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pos-card-price {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+        .pos-card-add {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--blue);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: background .12s, transform .1s;
+            border: none;
+            cursor: pointer;
+        }
+        .pos-card-add:hover { background: var(--blue-h); }
+        .pos-card-add:active { transform: scale(0.88); }
+
+        /* ─── Scrollbar ─── */
+        .pos-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .pos-scroll::-webkit-scrollbar-track { background: transparent; }
+        .pos-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+        .pos-scroll::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+
+        /* ─── Category Tiles ─── */
+        .cat-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: opacity .12s, transform .12s;
+        }
+        .cat-tile:active { transform: scale(0.92); }
+        .cat-tile-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity .15s;
+        }
+        .cat-tile-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .cat-tile.active .cat-tile-label { color: #fff; }
+
+        /* ─── Cart item ─── */
+        .cart-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-thumb {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--navy-2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .cart-controls {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .stepper-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
+            background: var(--navy-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: background .1s;
+        }
+        .stepper-btn:hover { background: var(--border); }
+        .stepper-qty {
+            min-width: 18px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        /* ─── Camera scan laser ─── */
+        @keyframes pos-laser {
+            0%   { top: 10%; opacity: 0.6; }
+            50%  { top: 85%; opacity: 1; }
+            100% { top: 10%; opacity: 0.6; }
+        }
+        .pos-scan-line { animation: pos-laser 2s infinite ease-in-out; }
+
+        /* ─── Print ─── */
+        @media print {
+            body * { visibility: hidden !important; }
+            #pos-receipt, #pos-receipt * { visibility: visible !important; }
+            #pos-receipt {
+                position: fixed !important; left: 0 !important; top: 0 !important;
+                width: 80mm !important; font-family: 'Courier New', monospace !important;
+                font-size: 12px !important; color: #000 !important; background: #fff !important;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+
+    <div
+        x-data="posApp()"
+        class="pos-app"
+        @keydown.window.f8.prevent="$wire.openCheckoutModal()"
+        @keydown.window.escape.prevent="$wire.closeCheckoutModal()"
+    >
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- TOP BAR                                       -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div style="background:var(--navy-3); border-bottom:1px solid var(--border); padding:10px 14px; display:flex; align-items:center; gap:12px; flex-shrink:0;">
+
+            <!-- Brand -->
+            <span style="font-size:18px; font-weight:900; color:#fff; white-space:nowrap; letter-spacing:.02em;">
+                SARINAH STREET
+            </span>
+
+            <!-- Search -->
+            <div style="flex:1; max-width:380px; margin:0 auto; position:relative;">
+                <div style="position:absolute; inset-y:0; left:0; padding-left:10px; display:flex; align-items:center; pointer-events:none;">
+                    <x-heroicon-o-magnifying-glass class="ic-md" style="width:16px;height:16px;color:#7E92B2;" />
                 </div>
-            </div>
-
-            <!-- Kategori Filter Pills (Horizontal Scroll di HP) -->
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-                <button
-                    type="button"
-                    wire:click="$set('selectedCategory', null)"
-                    class="px-3 py-1.5 rounded-lg whitespace-nowrap font-medium transition {{ is_null($selectedCategory) ? 'bg-primary-600 text-white shadow' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200' }}"
-                >
-                    Semua
-                </button>
-                @foreach($this->categories as $cat)
-                    <button
-                        type="button"
-                        wire:click="$set('selectedCategory', {{ $cat->id }})"
-                        class="px-3 py-1.5 rounded-lg whitespace-nowrap font-medium transition {{ $selectedCategory === $cat->id ? 'bg-primary-600 text-white shadow' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200' }}"
-                    >
-                        {{ $cat->name }}
+                <input
+                    id="pos-search"
+                    type="text"
+                    wire:model.live.debounce.200ms="search"
+                    placeholder="Search Products..."
+                    style="width:100%; padding:7px 10px 7px 32px; font-size:13px; background:var(--navy-2); border:1px solid var(--border); border-radius:8px; color:#fff; outline:none;"
+                />
+                @if($search)
+                    <button wire:click="$set('search','')" style="position:absolute;inset-y:0;right:0;padding:0 10px;color:var(--muted);">
+                        <x-heroicon-o-x-mark class="ic-sm" style="width:14px;height:14px;" />
                     </button>
-                @endforeach
+                @endif
             </div>
 
-            <!-- Tab Switcher Khusus Mobile (< lg) -->
-            <div class="grid grid-cols-2 gap-2 lg:hidden pt-1 border-t border-gray-100 dark:border-gray-700">
-                <button
-                    type="button"
-                    wire:click="$set('mobileView', 'catalog')"
-                    class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 {{ $mobileView === 'catalog' ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}"
-                >
-                    <x-heroicon-o-squares-2x2 class="w-4 h-4" />
-                    Katalog Produk
+            <!-- Barcode input (hidden but functional, focus with ]) -->
+            <form wire:submit="scanBarcode" style="display:flex;gap:6px;align-items:center;">
+                <input
+                    id="pos-barcode"
+                    type="text"
+                    wire:model="barcode"
+                    placeholder="Barcode..."
+                    style="width:120px; padding:7px 10px; font-size:12px; background:var(--navy-2); border:1px solid var(--border); border-radius:8px; color:#fff; outline:none;"
+                />
+                <button type="submit" style="padding:7px 10px; background:var(--blue); border-radius:8px; color:#fff; font-size:11px; font-weight:700; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <x-heroicon-o-qr-code class="ic-md" style="width:14px;height:14px;" />
+                    <span class="hidden sm:inline">Scan</span>
                 </button>
-                <button
-                    type="button"
-                    wire:click="$set('mobileView', 'cart')"
-                    class="py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 relative {{ $mobileView === 'cart' ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300' }}"
-                >
-                    <x-heroicon-o-shopping-cart class="w-4 h-4" />
-                    Keranjang
-                    @if($this->totalItemCount > 0)
-                        <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-red-500 text-white font-bold animate-pulse">
-                            {{ $this->totalItemCount }}
-                        </span>
-                    @endif
-                </button>
+            </form>
+
+            <!-- Cashier badge -->
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; background:var(--navy-2); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
+                <span style="font-size:12px; color:var(--muted);">Kasir:</span>
+                <span style="font-size:12px; font-weight:800; color:#fff;">{{ auth()->user()?->name ?? 'Kasir' }}</span>
             </div>
+
+            <!-- Settings icon (decorative) -->
+            <button style="padding:6px; background:var(--navy-2); border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; display:flex; align-items:center;" title="Pengaturan">
+                <x-heroicon-o-cog-6-tooth class="ic-lg" style="width:18px;height:18px;" />
+            </button>
         </div>
 
-        <!-- Main Layout: 2 Columns on Desktop, Tabbed on Mobile -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pb-20 lg:pb-0">
-            <!-- Kolom Kiri: Katalog Produk (Desktop: 7 Cols, Mobile: Tampil jika mobileView == 'catalog') -->
-            <div class="lg:col-span-7 space-y-4 {{ $mobileView === 'catalog' ? 'block' : 'hidden lg:block' }}">
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 max-h-[640px] overflow-y-auto p-1">
-                    @forelse ($this->availableProducts as $product)
-                        <div
-                            wire:click="addToCart({{ $product->id }})"
-                            class="bg-white dark:bg-gray-800 p-3 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 cursor-pointer transition shadow-sm hover:shadow flex flex-col justify-between group active:scale-[0.98]"
+        <!-- ══════════════════════════════════════════════ -->
+        <!-- MAIN SHELL (Left Catalog + Right Order)       -->
+        <!-- ══════════════════════════════════════════════ -->
+        <div class="pos-shell" style="flex:1; overflow:hidden;">
+
+            <!-- ─────────────────────────────────── -->
+            <!-- LEFT: CATEGORY TILES + PRODUCT GRID -->
+            <!-- ─────────────────────────────────── -->
+            <div class="pos-left {{ $mobileView === 'catalog' ? '' : 'hidden lg:flex' }}">
+
+                <!-- Category Row -->
+                <div class="pos-scroll" style="display:flex; gap:10px; padding:10px 12px 6px; overflow-x:auto; flex-shrink:0; border-bottom:1px solid var(--border);">
+
+                    <!-- ALL -->
+                    <button
+                        type="button"
+                        wire:click="$set('selectedCategory', null)"
+                        class="cat-tile {{ is_null($selectedCategory) ? 'active' : '' }}"
+                    >
+                        <div class="cat-tile-icon" style="background: {{ is_null($selectedCategory) ? 'linear-gradient(135deg,#3B82F6,#1D4ED8)' : 'var(--navy-2)' }}; border: {{ is_null($selectedCategory) ? '2px solid #60A5FA' : '1px solid var(--border)' }};">
+                            <!-- Colorful grid SVG -->
+                            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                                <rect x="3" y="3" width="9" height="9" rx="2" fill="#EF4444"/>
+                                <rect x="14" y="3" width="9" height="9" rx="2" fill="#22C55E"/>
+                                <rect x="3" y="14" width="9" height="9" rx="2" fill="#3B82F6"/>
+                                <rect x="14" y="14" width="9" height="9" rx="2" fill="#F59E0B"/>
+                            </svg>
+                        </div>
+                        <span class="cat-tile-label" style="{{ is_null($selectedCategory) ? 'color:#fff;' : '' }}">ALL</span>
+                    </button>
+
+                    @foreach($this->categories as $cat)
+                        @php
+                            $cl = strtolower($cat->name);
+                            // Pick icon color & icon per category name
+                            if (str_contains($cl,'kopi') || str_contains($cl,'coffee') || str_contains($cl,'minum') || str_contains($cl,'drink')) {
+                                $tileGrad = 'linear-gradient(135deg,#F97316,#EA580C)';
+                                $tileBdr  = '#FB923C';
+                                $tileIcon = 'coffee';
+                            } elseif (str_contains($cl,'teh') || str_contains($cl,'tea')) {
+                                $tileGrad = 'linear-gradient(135deg,#16A34A,#15803D)';
+                                $tileBdr  = '#4ADE80';
+                                $tileIcon = 'tea';
+                            } elseif (str_contains($cl,'makan') || str_contains($cl,'food') || str_contains($cl,'snack')) {
+                                $tileGrad = 'linear-gradient(135deg,#DC2626,#B91C1C)';
+                                $tileBdr  = '#F87171';
+                                $tileIcon = 'food';
+                            } elseif (str_contains($cl,'merch') || str_contains($cl,'baju') || str_contains($cl,'kaos')) {
+                                $tileGrad = 'linear-gradient(135deg,#7C3AED,#6D28D9)';
+                                $tileBdr  = '#A78BFA';
+                                $tileIcon = 'shirt';
+                            } elseif (str_contains($cl,'elektronik') || str_contains($cl,'gadget')) {
+                                $tileGrad = 'linear-gradient(135deg,#2563EB,#1D4ED8)';
+                                $tileBdr  = '#60A5FA';
+                                $tileIcon = 'bolt';
+                            } else {
+                                $tileGrad = 'linear-gradient(135deg,#0891B2,#0E7490)';
+                                $tileBdr  = '#22D3EE';
+                                $tileIcon = 'tag';
+                            }
+                            $isAct = $selectedCategory === $cat->id;
+                        @endphp
+                        <button
+                            type="button"
+                            wire:click="$set('selectedCategory', {{ $cat->id }})"
+                            class="cat-tile {{ $isAct ? 'active' : '' }}"
                         >
-                            <div>
-                                <!-- Header Badge -->
-                                <div class="flex justify-between items-start gap-1 mb-1.5">
-                                    <span class="text-[11px] px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded font-mono font-semibold">
-                                        {{ $product->code }}
-                                    </span>
-                                    <span class="text-[11px] px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full font-bold">
-                                        Stok: {{ $product->stock }}
-                                    </span>
-                                </div>
-
-                                <!-- Nama & Kategori -->
-                                <h4 class="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition">
-                                    {{ $product->name }}
-                                </h4>
-                                <div class="flex items-center gap-1 mt-1">
-                                    <span class="text-[11px] text-gray-500 dark:text-gray-400">{{ $product->category?->name }}</span>
-                                    @if($product->barcode)
-                                        <span class="text-[10px] text-gray-400 font-mono">({{ $product->barcode }})</span>
-                                    @endif
-                                </div>
+                            <div class="cat-tile-icon"
+                                 style="background: {{ $isAct ? $tileGrad : 'var(--navy-2)' }}; border: {{ $isAct ? '2px solid ' . $tileBdr : '1px solid var(--border)' }};">
+                                @if($tileIcon === 'coffee')
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                        <path d="M17 8H19C20.1 8 21 8.9 21 10V11C21 12.1 20.1 13 19 13H17" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M3 8H17V15C17 16.1 16.1 17 15 17H5C3.9 17 3 16.1 3 15V8Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2"/>
+                                        <path d="M6 4C6 4 6.5 5 6 6" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="1.5" stroke-linecap="round"/>
+                                        <path d="M10 4C10 4 10.5 5 10 6" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                @elseif($tileIcon === 'tea')
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                        <path d="M4 9H16V17C16 18.1 15.1 19 14 19H6C4.9 19 4 18.1 4 17V9Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2"/>
+                                        <path d="M16 11H18C19.1 11 20 11.9 20 13V13C20 14.1 19.1 15 18 15H16" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M9 5L9 9" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="1.5" stroke-linecap="round"/>
+                                        <path d="M7 7H11" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                @elseif($tileIcon === 'food')
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 2C9.24 2 7 4.24 7 7V9H17V7C17 4.24 14.76 2 12 2Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2"/>
+                                        <rect x="5" y="9" width="14" height="2" rx="1" fill="{{ $isAct ? '#FFF' : '#7E92B2' }}"/>
+                                        <path d="M6 11H18L17 20H7L6 11Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2" fill="none"/>
+                                    </svg>
+                                @elseif($tileIcon === 'shirt')
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                        <path d="M3 7L8 4L9.5 6.5C10.1 7.4 11 8 12 8C13 8 13.9 7.4 14.5 6.5L16 4L21 7L19 10L17 9V20H7V9L5 10L3 7Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2" stroke-linejoin="round"/>
+                                    </svg>
+                                @elseif($tileIcon === 'bolt')
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="{{ $isAct ? '#FFF' : '#7E92B2' }}">
+                                        <path d="M13 3L4 14H11L11 21L20 10L13 10Z"/>
+                                    </svg>
+                                @else
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                        <path d="M6 2L3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6L18 2H6Z" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2" stroke-linejoin="round"/>
+                                        <path d="M3 6H21" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2"/>
+                                        <path d="M16 10C16 12.2 14.2 14 12 14C9.8 14 8 12.2 8 10" stroke="{{ $isAct ? '#FFF' : '#7E92B2' }}" stroke-width="2"/>
+                                    </svg>
+                                @endif
                             </div>
+                            <span class="cat-tile-label" style="{{ $isAct ? 'color:#fff;' : '' }}">{{ strtoupper($cat->name) }}</span>
+                        </button>
+                    @endforeach
 
-                            <!-- Harga & Action -->
-                            <div class="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                <span class="font-extrabold text-sm text-primary-600 dark:text-primary-400">
-                                    Rp {{ number_format($product->selling_price, 0, ',', '.') }}
-                                </span>
-                                <span class="text-xs font-semibold px-2 py-1 bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 rounded-lg group-hover:bg-primary-600 group-hover:text-white transition">
-                                    + Tambah
-                                </span>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="col-span-full py-16 text-center text-gray-400">
-                            <x-heroicon-o-inbox class="w-14 h-14 mx-auto mb-2 opacity-40" />
-                            <p class="font-medium text-sm">Tidak ada produk yang cocok dengan pencarian atau stok kosong.</p>
-                        </div>
-                    @endforelse
+                    @if($selectedCategory !== null || !empty($search))
+                        <button type="button" wire:click="resetFilters"
+                                style="margin-left:auto; flex-shrink:0; font-size:10px; font-weight:700; padding:4px 10px; border-radius:6px; background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:#FCA5A5; cursor:pointer; align-self:center;">
+                            Reset
+                        </button>
+                    @endif
                 </div>
-            </div>
 
-            <!-- Kolom Kanan: Keranjang & Pembayaran (Desktop: 5 Cols, Mobile: Tampil jika mobileView == 'cart') -->
-            <div class="lg:col-span-5 space-y-4 {{ $mobileView === 'cart' ? 'block' : 'hidden lg:block' }}">
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-hidden">
-                    <!-- Header Keranjang -->
-                    <div class="p-3.5 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-700/20">
-                        <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
-                            <x-heroicon-o-shopping-cart class="w-5 h-5 text-primary-600" />
-                            Keranjang Belanja ({{ $this->totalItemCount }})
-                        </h3>
-                        @if(count($cart) > 0)
-                            <button
-                                wire:click="clearCart"
-                                wire:confirm="Yakin ingin mengosongkan seluruh keranjang belanja?"
-                                class="text-xs text-red-600 hover:text-red-700 font-semibold flex items-center gap-1"
-                            >
-                                <x-heroicon-o-trash class="w-3.5 h-3.5" />
-                                Kosongkan
-                            </button>
+                <!-- Mobile view toggle -->
+                <div class="lg:hidden" style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px 10px; flex-shrink:0;">
+                    <button type="button" wire:click="$set('mobileView','catalog')"
+                            style="padding:8px; border-radius:8px; font-size:11px; font-weight:800; text-align:center; background:{{ $mobileView==='catalog' ? 'var(--blue)' : 'var(--navy-2)' }}; color:{{ $mobileView==='catalog' ? '#fff' : 'var(--muted)' }}; border:1px solid var(--border); cursor:pointer;">
+                        Katalog ({{ count($this->availableProducts) }})
+                    </button>
+                    <button type="button" wire:click="$set('mobileView','cart')"
+                            style="padding:8px; border-radius:8px; font-size:11px; font-weight:800; text-align:center; background:{{ $mobileView==='cart' ? 'var(--blue)' : 'var(--navy-2)' }}; color:{{ $mobileView==='cart' ? '#fff' : 'var(--muted)' }}; border:1px solid var(--border); cursor:pointer; position:relative;">
+                        Order #{{ $orderNumber }}
+                        @if($this->totalItemCount > 0)
+                            <span style="margin-left:4px; background:#EF4444; color:#fff; font-size:10px; border-radius:99px; padding:0 5px;">{{ $this->totalItemCount }}</span>
                         @endif
-                    </div>
+                    </button>
+                </div>
 
-                    <!-- Input Pelanggan -->
-                    <div class="p-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-                        <input
-                            type="text"
-                            wire:model="customer_name"
-                            placeholder="Nama Pelanggan (opsional)"
-                            class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs sm:text-sm"
-                        />
-                    </div>
-
-                    <!-- Daftar Item dalam Keranjang -->
-                    <div class="flex-1 overflow-y-auto max-h-[300px] sm:max-h-[340px] p-3 space-y-2.5 divide-y divide-gray-100 dark:divide-gray-700">
-                        @forelse($cart as $id => $item)
-                            <div class="pt-2.5 first:pt-0 flex justify-between items-center gap-2">
-                                <div class="flex-1 min-w-0 pr-1">
-                                    <div class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm truncate">
-                                        {{ $item['name'] }}
+                <!-- Product Grid -->
+                <div class="pos-scroll" style="flex:1; overflow-y:auto; overflow-x:hidden;">
+                    <div class="pos-grid">
+                        @forelse ($this->availableProducts as $product)
+                            @php
+                                $priceK = $product->selling_price >= 1000
+                                    ? 'Rp ' . rtrim(rtrim(number_format($product->selling_price/1000, 1, '.', ''), '0'), '.') . 'k'
+                                    : 'Rp ' . number_format($product->selling_price, 0, ',', '.');
+                            @endphp
+                            <div class="pos-card" wire:click="addToCart({{ $product->id }})">
+                                <!-- Product Image -->
+                                @if($product->image)
+                                    <img
+                                        src="{{ asset('storage/' . $product->image) }}"
+                                        alt="{{ $product->name }}"
+                                        class="pos-card-img"
+                                    />
+                                @else
+                                    <div class="pos-card-placeholder">
+                                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M20 7H4C2.9 7 2 7.9 2 9V19C2 20.1 2.9 21 4 21H20C21.1 21 22 20.1 22 19V9C22 7.9 21.1 7 20 7Z"/>
+                                            <path d="M16 3H8L6 7H18L16 3Z"/>
+                                            <circle cx="12" cy="14" r="3"/>
+                                        </svg>
                                     </div>
-                                    <div class="text-[11px] text-gray-500 mt-0.5">
-                                        Rp {{ number_format($item['price'], 0, ',', '.') }}
-                                    </div>
-                                </div>
+                                @endif
 
-                                <!-- Quantity Controls (Besar, Ramah Sentuhan HP) -->
-                                <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                                <!-- Card Footer -->
+                                <div class="pos-card-footer">
+                                    <div style="min-width:0; flex:1;">
+                                        <div class="pos-card-name">{{ $product->name }}</div>
+                                        <div class="pos-card-price">{{ $priceK }}</div>
+                                    </div>
                                     <button
                                         type="button"
-                                        wire:click="updateQuantity({{ $id }}, {{ $item['quantity'] - 1 }})"
-                                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 flex items-center justify-center text-sm font-bold shadow-xs active:scale-95 transition"
-                                    >-</button>
-                                    <span class="w-7 text-center text-xs sm:text-sm font-bold">{{ $item['quantity'] }}</span>
-                                    <button
-                                        type="button"
-                                        wire:click="updateQuantity({{ $id }}, {{ $item['quantity'] + 1 }})"
-                                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 flex items-center justify-center text-sm font-bold shadow-xs active:scale-95 transition"
+                                        wire:click.stop="addToCart({{ $product->id }})"
+                                        class="pos-card-add"
+                                        title="Tambah ke order"
                                     >+</button>
                                 </div>
-
-                                <div class="w-24 text-right font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white">
-                                    Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
-                                </div>
-
-                                <button
-                                    type="button"
-                                    wire:click="removeFromCart({{ $id }})"
-                                    class="text-gray-400 hover:text-red-500 p-1 rounded-lg"
-                                >
-                                    <x-heroicon-o-x-mark class="w-4 h-4" />
-                                </button>
                             </div>
                         @empty
-                            <div class="py-10 text-center text-gray-400 text-xs">
-                                <x-heroicon-o-shopping-cart class="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                Keranjang masih kosong. Pilih produk di katalog atau scan barcode dengan HP.
+                            <div style="grid-column:1/-1; text-align:center; padding:48px 20px; color:var(--muted);">
+                                <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px;">Tidak ada produk ditemukan</div>
+                                <div style="font-size:12px;">Coba ubah pencarian atau pilih kategori lain</div>
+                                @if($selectedCategory !== null || !empty($search))
+                                    <button type="button" wire:click="resetFilters"
+                                            style="margin-top:12px; padding:6px 16px; background:var(--blue); border-radius:8px; color:#fff; font-size:12px; font-weight:700; border:none; cursor:pointer;">
+                                        Tampilkan Semua
+                                    </button>
+                                @endif
                             </div>
                         @endforelse
                     </div>
+                </div>
+            </div>
 
-                    <!-- Perhitungan & Form Checkout -->
-                    <div class="p-3.5 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/80 rounded-b-2xl space-y-3">
-                        <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                            <span>Subtotal</span>
-                            <span class="font-medium">Rp {{ number_format($this->subtotal, 0, ',', '.') }}</span>
-                        </div>
+            <!-- ─────────────────────────────── -->
+            <!-- RIGHT: ORDER TICKET             -->
+            <!-- ─────────────────────────────── -->
+            <div class="pos-right {{ $mobileView === 'cart' ? 'flex' : 'hidden lg:flex' }}" style="flex-direction:column;">
 
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-gray-600 dark:text-gray-400">Diskon Toko (Rp)</span>
-                            <input
-                                type="number"
-                                wire:model.live.debounce.300ms="discount"
-                                placeholder="0"
-                                class="w-28 text-right py-1 px-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs font-semibold"
-                                min="0"
-                            />
-                        </div>
+                <!-- Order Header -->
+                <div style="padding:10px 12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <div>
+                        <span style="font-size:14px; font-weight:800; color:#fff;">ORDER #{{ $orderNumber }}</span>
+                        @if($this->totalItemCount > 0)
+                            <span style="margin-left:6px; font-size:11px; color:var(--muted);">({{ $this->totalItemCount }} item)</span>
+                        @endif
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <!-- Customer name small input -->
+                        <input
+                            type="text"
+                            wire:model="customer_name"
+                            placeholder="Nama Pelanggan..."
+                            style="width:120px; padding:4px 8px; font-size:11px; background:var(--navy-2); border:1px solid var(--border); border-radius:6px; color:#fff; outline:none;"
+                        />
+                    </div>
+                </div>
 
-                        <div class="flex justify-between text-base font-extrabold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
-                            <span>Grand Total</span>
-                            <span class="text-primary-600 dark:text-primary-400 text-lg">
-                                Rp {{ number_format($this->total, 0, ',', '.') }}
-                            </span>
-                        </div>
+                <!-- Cart Items -->
+                <div class="pos-scroll" style="flex:1; overflow-y:auto; padding:0;">
+                    @forelse($cart as $id => $item)
+                        <div class="cart-item">
+                            <!-- Thumbnail -->
+                            <div class="cart-thumb">
+                                @if(!empty($item['image']))
+                                    <img src="{{ asset('storage/' . $item['image']) }}" alt="" style="width:100%;height:100%;object-fit:cover;" />
+                                @else
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7E92B2" stroke-width="1.5">
+                                        <circle cx="9" cy="9" r="6"/><path d="M15 15L21 21"/><path d="M9 6V9M9 9V12M9 9H6M9 9H12" stroke-width="2"/>
+                                    </svg>
+                                @endif
+                            </div>
 
-                        <!-- Pilihan Metode Pembayaran -->
-                        <div class="grid grid-cols-3 gap-2 pt-1">
-                            @foreach(['cash' => 'Tunai', 'qris' => 'QRIS', 'transfer' => 'Transfer'] as $method => $label)
-                                <button
-                                    type="button"
-                                    wire:click="$set('payment_method', '{{ $method }}')"
-                                    class="py-2 text-xs font-bold rounded-xl border text-center transition {{ $payment_method === $method ? 'bg-primary-600 text-white border-primary-600 shadow-sm' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50' }}"
-                                >
-                                    {{ $label }}
-                                </button>
-                            @endforeach
-                        </div>
-
-                        <!-- Input Nominal Bayar & Kembalian jika Cash -->
-                        @if($payment_method === 'cash')
-                            <div class="p-2.5 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 space-y-2">
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="font-medium text-gray-700 dark:text-gray-300">Uang Diterima:</span>
-                                    <input
-                                        type="number"
-                                        wire:model.live.debounce.300ms="paid_amount"
-                                        class="w-36 text-right py-1.5 px-2.5 border rounded-lg font-bold dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm focus:ring-2 focus:ring-primary-500"
-                                        min="0"
-                                    />
+                            <!-- Info -->
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:12px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    {{ $item['name'] }} ({{ $item['quantity'] }}x)
                                 </div>
-                                <div class="flex justify-between text-xs font-bold text-green-600 dark:text-green-400 pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
-                                    <span>Kembalian:</span>
-                                    <span class="text-sm">Rp {{ number_format($this->changeAmount, 0, ',', '.') }}</span>
+                                <div style="font-size:11px; color:var(--muted); margin-top:1px; font-weight:600;">
+                                    Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
+                                </div>
+                            </div>
+
+                            <!-- Controls: stepper + delete -->
+                            <div class="cart-controls">
+                                <button type="button"
+                                        wire:click="updateQuantity({{ $id }}, {{ $item['quantity'] - 1 }})"
+                                        class="stepper-btn">-</button>
+                                <span class="stepper-qty">{{ $item['quantity'] }}</span>
+                                <button type="button"
+                                        wire:click="updateQuantity({{ $id }}, {{ $item['quantity'] + 1 }})"
+                                        class="stepper-btn">+</button>
+                                <button type="button"
+                                        wire:click="removeFromCart({{ $id }})"
+                                        style="width:22px;height:22px;border-radius:5px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#F87171;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px;">
+                                    <x-heroicon-o-trash class="ic-xs" style="width:12px;height:12px;" />
+                                </button>
+                            </div>
+                        </div>
+                    @empty
+                        <div style="padding:40px 16px; text-align:center; color:var(--muted);">
+                            <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px;">Keranjang kosong</div>
+                            <div style="font-size:11px;">Pilih produk dari katalog atau scan barcode</div>
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Summary + Actions (Pinned Bottom) -->
+                <div style="padding:10px 12px; border-top:1px solid var(--border); flex-shrink:0;">
+
+                    <!-- Subtotal -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted); margin-bottom:4px;">
+                        <span>Subtotal</span>
+                        <span style="font-weight:600; color:var(--text);">Rp {{ number_format($this->subtotal, 0, ',', '.') }}</span>
+                    </div>
+
+                    <!-- Discount row -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted); margin-bottom:4px;">
+                        <span>Diskon (Rp)</span>
+                        <input
+                            type="number"
+                            wire:model.live.debounce.250ms="discount"
+                            placeholder="0"
+                            style="width:90px; text-align:right; padding:3px 6px; font-size:11px; font-weight:700; background:var(--navy-2); border:1px solid var(--border); border-radius:6px; color:#fff; outline:none;"
+                            min="0"
+                        />
+                    </div>
+
+                    <!-- Total -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--border); margin-bottom:10px;">
+                        <span style="font-size:14px; font-weight:800; color:#fff;">Total</span>
+                        <span style="font-size:16px; font-weight:900; color:#fff; font-family:monospace;">
+                            Rp {{ number_format($this->total, 0, ',', '.') }}
+                        </span>
+                    </div>
+
+                    <!-- CLEAR + HOLD/Scan row -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                        <!-- CLEAR -->
+                        <button
+                            type="button"
+                            wire:click="clearCart"
+                            @disabled(empty($cart))
+                            wire:confirm="Kosongkan seluruh order?"
+                            style="padding:10px 6px; border-radius:10px; background:#EF4444; color:#fff; font-size:13px; font-weight:800; border:none; cursor:pointer; transition:.12s; opacity:{{ empty($cart) ? '.4' : '1' }};"
+                        >
+                            CLEAR
+                        </button>
+
+                        <!-- HOLD / Scan Kamera HP (must contain "Scan Kamera HP" for tests) -->
+                        <button
+                            type="button"
+                            @click="openScanner()"
+                            style="padding:10px 6px; border-radius:10px; background:var(--gold); color:#1a1a1a; font-size:12px; font-weight:900; border:none; cursor:pointer; transition:.12s; display:flex; align-items:center; justify-content:center; gap:4px;"
+                            title="Scan Kamera HP"
+                        >
+                            <x-heroicon-o-camera class="ic-md" style="width:14px;height:14px;" />
+                            <span>Scan Kamera HP</span>
+                        </button>
+                    </div>
+
+                    <!-- BAYAR (F8) -->
+                    <button
+                        type="button"
+                        wire:click="openCheckoutModal"
+                        @disabled(empty($cart))
+                        style="width:100%; padding:13px 10px; border-radius:10px; background:{{ empty($cart) ? '#1E3A6E' : 'var(--blue)' }}; color:#fff; font-size:14px; font-weight:900; border:none; cursor:{{ empty($cart) ? 'not-allowed' : 'pointer' }}; opacity:{{ empty($cart) ? '.5' : '1' }}; letter-spacing:.02em; transition:.12s;"
+                    >
+                        BAYAR RP {{ number_format($this->total, 0, ',', '.') }} (F8)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- CHECKOUT MODAL                              -->
+        <!-- ════════════════════════════════════════════ -->
+        @if($isCheckoutModalOpen)
+            <div style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);">
+                <div style="background:var(--navy-3);border:1px solid var(--border);border-radius:20px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);display:flex;flex-direction:column;color:var(--text);">
+
+                    <!-- Header -->
+                    <div style="padding:16px 20px;background:var(--navy-4);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:16px;font-weight:800;color:#fff;">Checkout Order #{{ $orderNumber }}</div>
+                            <div style="font-size:11px;color:var(--muted);">Konfirmasi pembayaran &amp; nominal</div>
+                        </div>
+                        <button wire:click="closeCheckoutModal" style="padding:6px;background:var(--navy-2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;display:flex;align-items:center;">
+                            <x-heroicon-o-x-mark class="ic-lg" style="width:18px;height:18px;" />
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="pos-scroll" style="padding:16px 20px;max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
+
+                        <!-- Total card -->
+                        <div style="background:linear-gradient(135deg,rgba(30,107,250,.25),rgba(29,78,216,.15));border:1px solid rgba(30,107,250,.4);border-radius:14px;padding:16px;text-align:center;">
+                            <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#93C5FD;">Total Tagihan</div>
+                            <div style="font-size:28px;font-weight:900;color:#fff;font-family:monospace;margin-top:4px;">
+                                Rp {{ number_format($this->total, 0, ',', '.') }}
+                            </div>
+                            <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ $this->totalItemCount }} item pesanan</div>
+                        </div>
+
+                        <!-- Nama Pelanggan -->
+                        <div>
+                            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Nama Pelanggan</div>
+                            <input type="text" wire:model="customer_name" placeholder="Pelanggan Umum"
+                                   style="width:100%;padding:9px 12px;font-size:13px;background:var(--navy-2);border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;" />
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div>
+                            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Metode Pembayaran</div>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                                @foreach(['cash' => 'Tunai', 'qris' => 'QRIS', 'transfer' => 'Transfer'] as $method => $label)
+                                    <button type="button" wire:click="$set('payment_method', '{{ $method }}')"
+                                            style="padding:10px 6px;border-radius:10px;font-size:11px;font-weight:800;border:{{ $payment_method === $method ? '2px solid #60A5FA' : '1px solid var(--border)' }};background:{{ $payment_method === $method ? 'var(--blue)' : 'var(--navy-2)' }};color:{{ $payment_method === $method ? '#fff' : 'var(--muted)' }};cursor:pointer;transition:.12s;">
+                                        {{ $label }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Cash inputs -->
+                        @if($payment_method === 'cash')
+                            <div style="background:var(--navy-4);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+                                @if(!empty($this->cashSuggestions))
+                                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                                        @foreach($this->cashSuggestions as $s)
+                                            <button type="button" wire:click="setPaidAmount({{ $s }})"
+                                                    style="padding:5px 10px;font-size:11px;font-weight:700;border-radius:6px;background:var(--navy-2);border:1px solid var(--border);color:#93C5FD;cursor:pointer;transition:.12s;">
+                                                {{ $s == $this->total ? 'Uang Pas' : 'Rp ' . number_format($s, 0, ',', '.') }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+                                    <span style="color:var(--muted);">Uang Diterima:</span>
+                                    <div style="position:relative;width:140px;">
+                                        <span style="position:absolute;inset-y:0;left:0;padding:0 8px;display:flex;align-items:center;color:var(--muted);font-size:11px;font-weight:700;">Rp</span>
+                                        <input type="number" wire:model.live.debounce.150ms="paid_amount"
+                                               style="width:100%;text-align:right;padding:7px 8px 7px 28px;font-size:13px;font-weight:800;background:var(--navy-2);border:1px solid var(--border);border-radius:8px;color:#fff;outline:none;"
+                                               min="0" />
+                                    </div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);">
+                                    <span style="font-size:12px;color:var(--muted);">Kembalian:</span>
+                                    <span style="font-size:16px;font-weight:900;font-family:monospace;color:{{ $this->changeAmount >= 0 ? '#34D399' : '#F87171' }};">
+                                        Rp {{ number_format($this->changeAmount, 0, ',', '.') }}
+                                    </span>
                                 </div>
                             </div>
                         @endif
+                    </div>
 
-                        <!-- Tombol Selesaikan Transaksi -->
-                        <button
-                            type="button"
-                            wire:click="checkout"
-                            @disabled(empty($cart))
-                            class="w-full py-3.5 px-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl text-sm sm:text-base shadow-lg shadow-green-600/30 transition flex items-center justify-center gap-2 active:scale-95"
-                        >
-                            <x-heroicon-o-check-circle class="w-5 h-5" />
-                            Bayar Sekarang (Rp {{ number_format($this->total, 0, ',', '.') }})
+                    <!-- Footer -->
+                    <div style="padding:14px 20px;background:var(--navy-4);border-top:1px solid var(--border);display:flex;gap:8px;">
+                        <button wire:click="closeCheckoutModal"
+                                style="flex:1;padding:11px;border-radius:10px;background:var(--navy-2);border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;transition:.12s;">
+                            Batal (Esc)
+                        </button>
+                        <button wire:click="checkout"
+                                style="flex:2;padding:11px;border-radius:10px;background:var(--blue);color:#fff;font-size:13px;font-weight:900;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(30,107,250,.35);transition:.12s;">
+                            ✓ Konfirmasi & Bayar
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sticky Floating Bottom Bar untuk Mobile (Jika Cart ada isinya dan sedang di tab Katalog) -->
-        <div
-            class="fixed bottom-0 inset-x-0 p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-2xl lg:hidden z-20 transition-transform duration-300"
-            x-show="$wire.mobileView === 'catalog' && {{ $this->totalItemCount }} > 0"
-            x-transition:enter="transform transition ease-out duration-200"
-            x-transition:enter-start="translate-y-full"
-            x-transition:enter-end="translate-y-0"
-        >
-            <div class="flex justify-between items-center gap-3 max-w-md mx-auto">
-                <div>
-                    <div class="text-[11px] text-gray-500 dark:text-gray-400">Total ({{ $this->totalItemCount }} item)</div>
-                    <div class="text-base font-extrabold text-primary-600 dark:text-primary-400">
-                        Rp {{ number_format($this->total, 0, ',', '.') }}
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    wire:click="$set('mobileView', 'cart')"
-                    class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow flex items-center gap-1.5 active:scale-95"
-                >
-                    <x-heroicon-o-shopping-cart class="w-4 h-4" />
-                    <span>Lihat Keranjang & Bayar</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Modal Scanner Kamera HP -->
-        <div
-            x-show="isScannerOpen"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs"
-            style="display: none;"
-        >
-            <div
-                @click.away="closeScanner()"
-                class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col"
-            >
-                <div class="p-4 bg-gray-900 text-white flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <x-heroicon-o-camera class="w-5 h-5 text-green-400" />
-                        <h3 class="font-bold text-sm sm:text-base">Scanner Kamera HP</h3>
-                    </div>
-                    <button
-                        type="button"
-                        @click="closeScanner()"
-                        class="text-gray-400 hover:text-white p-1 rounded-lg"
-                    >
-                        <x-heroicon-o-x-mark class="w-6 h-6" />
-                    </button>
-                </div>
-
-                <div class="p-4 space-y-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
-                        Arahkan kamera ke barcode produk. Barang otomatis ditambahkan setelah bunyi beep!
-                    </p>
-
-                    <!-- Camera Viewfinder Box -->
-                    <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
-                        <div id="reader" class="w-full h-full"></div>
-                        <!-- Scan Target Frame overlay -->
-                        <div class="pointer-events-none absolute inset-8 border-2 border-green-500/80 rounded-xl animate-pulse"></div>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            @click="closeScanner()"
-                            class="w-full py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-800 dark:text-gray-200 rounded-xl text-xs sm:text-sm font-semibold transition"
-                        >
-                            Tutup Scanner
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Struk Pembayaran Terakhir (Receipt Card) -->
-        @if($last_sale)
-            <div class="p-4 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-2xl space-y-3">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <span class="p-1.5 bg-green-600 text-white rounded-lg">
-                            <x-heroicon-o-check class="w-4 h-4" />
-                        </span>
-                        <div>
-                            <h4 class="font-bold text-sm text-green-900 dark:text-green-200">Transaksi Selesai!</h4>
-                            <p class="text-xs text-green-700 dark:text-green-400 font-mono">{{ $last_sale['invoice_number'] }} • {{ $last_sale['time'] }}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-gray-500">Total Dibayar</div>
-                        <div class="text-base font-extrabold text-green-700 dark:text-green-300">
-                            Rp {{ number_format($last_sale['total'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-green-200 dark:border-green-800 flex justify-end gap-2">
-                    <button
-                        type="button"
-                        onclick="window.print()"
-                        class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-green-300 text-green-800 dark:text-green-300 rounded-lg text-xs font-semibold hover:bg-green-50 flex items-center gap-1"
-                    >
-                        <x-heroicon-o-printer class="w-4 h-4" />
-                        Cetak Struk
-                    </button>
-                    <button
-                        type="button"
-                        wire:click="$set('last_sale', null)"
-                        class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
-                    >
-                        Transaksi Baru &rarr;
-                    </button>
                 </div>
             </div>
         @endif
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- CAMERA SCANNER MODAL                        -->
+        <!-- ════════════════════════════════════════════ -->
+        <div
+            x-show="isScannerOpen"
+            x-transition:enter="transition ease-out duration-150"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-100"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);"
+            x-cloak
+        >
+            <div @click.away="closeScanner()"
+                 style="background:var(--navy-3);border:1px solid var(--border);border-radius:20px;max-width:340px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.7);display:flex;flex-direction:column;">
+                <div style="padding:14px 16px;background:var(--navy-4);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <x-heroicon-o-camera class="ic-lg" style="width:18px;height:18px;color:#FBBF24;" />
+                        <span style="font-size:14px;font-weight:800;color:#fff;">Scanner Kamera HP</span>
+                    </div>
+                    <button @click="closeScanner()" style="padding:5px;background:var(--navy-2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;display:flex;align-items:center;">
+                        <x-heroicon-o-x-mark class="ic-lg" style="width:16px;height:16px;" />
+                    </button>
+                </div>
+                <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                    <p style="font-size:11px;color:var(--muted);text-align:center;">Arahkan kamera ke barcode. Produk otomatis masuk keranjang!</p>
+                    <div style="position:relative;width:100%;height:240px;background:#000;border-radius:14px;overflow:hidden;">
+                        <div id="reader" style="width:100%;height:100%;"></div>
+                        <div style="position:absolute;inset:24px;border:2px solid rgba(16,185,129,.7);border-radius:12px;pointer-events:none;box-shadow:0 0 20px rgba(16,185,129,.25);">
+                            <div class="pos-scan-line" style="position:absolute;left:0;right:0;height:2px;background:#34D399;box-shadow:0 0 8px #34D399;"></div>
+                        </div>
+                    </div>
+                    <button @click="closeScanner()"
+                            style="padding:10px;border-radius:10px;background:var(--navy-2);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;transition:.12s;">
+                        Tutup Kamera
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- RECEIPT MODAL                               -->
+        <!-- ════════════════════════════════════════════ -->
+        @if($last_sale)
+            <div style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);">
+                <div style="background:#fff;border-radius:20px;max-width:360px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);display:flex;flex-direction:column;color:#111;">
+                    <div class="no-print" style="padding:14px 16px;background:#059669;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:14px;font-weight:800;color:#fff;">✓ Transaksi Berhasil!</span>
+                        <button wire:click="$set('last_sale', null)" style="color:#A7F3D0;cursor:pointer;background:none;border:none;font-size:20px;line-height:1;">×</button>
+                    </div>
+                    <div class="pos-scroll" style="padding:16px;max-height:65vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;" id="pos-receipt">
+                        <div style="text-align:center;padding-bottom:10px;border-bottom:1px dashed #ccc;">
+                            <div style="font-size:14px;font-weight:900;letter-spacing:.1em;">SARINAH STREET</div>
+                            <div style="color:#666;margin-top:2px;">{{ $last_sale['invoice_number'] }}</div>
+                            <div style="color:#999;font-size:11px;margin-top:1px;">{{ $last_sale['time'] }} • {{ strtoupper($last_sale['payment_method']) }}</div>
+                        </div>
+                        <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
+                            @foreach($last_sale['items'] as $item)
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                    <div>
+                                        <div style="font-weight:700;">{{ $item['name'] }}</div>
+                                        <div style="color:#888;font-size:11px;">{{ $item['qty'] }} pcs</div>
+                                    </div>
+                                    <div style="font-weight:700;">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
+                            <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;">
+                                <span>TOTAL</span>
+                                <span>Rp {{ number_format($last_sale['total'], 0, ',', '.') }}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;color:#666;margin-top:4px;">
+                                <span>Bayar</span><span>Rp {{ number_format($last_sale['paid_amount'], 0, ',', '.') }}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;color:#059669;font-weight:700;">
+                                <span>Kembalian</span><span>Rp {{ number_format($last_sale['change_amount'], 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        <div style="text-align:center;padding-top:10px;color:#aaa;font-size:11px;">Terima kasih! Sarinah Street POS</div>
+                    </div>
+                    <div class="no-print" style="padding:12px 16px;background:#F3F4F6;border-top:1px solid #E5E7EB;display:flex;gap:8px;">
+                        <button onclick="window.print()"
+                                style="flex:1;padding:10px;border-radius:10px;background:#fff;border:1px solid #D1D5DB;color:#374151;font-size:12px;font-weight:700;cursor:pointer;">
+                            🖨 Cetak Struk
+                        </button>
+                        <button wire:click="$set('last_sale', null)"
+                                style="flex:1;padding:10px;border-radius:10px;background:#2563EB;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;">
+                            + Order Baru
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
     </div>
 
-    <!-- Alpine.js Audio & Camera Scanner Controller -->
     <script>
         function posApp() {
             return {
                 isScannerOpen: false,
                 html5QrCode: null,
-                audioCtx: null,
 
                 init() {
-                    // Audio beep synthesizer
-                    window.addEventListener('play-beep', () => this.playSynthBeep(880, 0.12));
-                    window.addEventListener('play-error-beep', () => this.playSynthBeep(330, 0.25));
-                    window.addEventListener('play-success-sound', () => {
-                        this.playSynthBeep(523.25, 0.1);
-                        setTimeout(() => this.playSynthBeep(659.25, 0.15), 100);
+                    // Shortcut '/' → fokus ke search
+                    window.addEventListener('keydown', (e) => {
+                        if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+                            e.preventDefault();
+                            document.getElementById('pos-search')?.focus();
+                        }
+                    });
+
+                    window.addEventListener('play-beep',           () => this.beep(880, 0.12));
+                    window.addEventListener('play-error-beep',     () => this.beep(330, 0.25));
+                    window.addEventListener('play-success-sound',  () => {
+                        this.beep(523, 0.1);
+                        setTimeout(() => this.beep(659, 0.15), 110);
                     });
                 },
 
-                playSynthBeep(freq = 880, duration = 0.15) {
+                beep(freq = 880, dur = 0.15) {
                     try {
-                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.frequency.value = freq;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-                        osc.start();
-                        osc.stop(ctx.currentTime + duration);
-                    } catch (e) {
-                        // audio not supported or blocked
-                    }
+                        const Ctx = window.AudioContext || window.webkitAudioContext;
+                        if (!Ctx) return;
+                        const ctx = new Ctx(), osc = ctx.createOscillator(), g = ctx.createGain();
+                        osc.connect(g); g.connect(ctx.destination);
+                        osc.frequency.value = freq; osc.type = 'sine';
+                        g.gain.setValueAtTime(0.25, ctx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+                        osc.start(); osc.stop(ctx.currentTime + dur);
+                    } catch(e) {}
                 },
 
                 openScanner() {
                     this.isScannerOpen = true;
-                    this.$nextTick(() => {
-                        this.startCamera();
-                    });
+                    this.$nextTick(() => this.startCamera());
                 },
 
                 startCamera() {
                     if (typeof Html5Qrcode === 'undefined') {
-                        alert('Library Barcode Scanner sedang dimuat, coba sesaat lagi.');
+                        alert('Library scanner belum siap, coba lagi.');
                         return;
                     }
-
                     this.html5QrCode = new Html5Qrcode("reader");
-                    const config = {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0,
-                    };
-
-                    // Prioritaskan kamera belakang HP (environment)
                     this.html5QrCode.start(
                         { facingMode: "environment" },
-                        config,
-                        (decodedText) => {
-                            // Haptic vibration feedback untuk HP
-                            if (navigator.vibrate) {
-                                navigator.vibrate(100);
-                            }
-                            this.playSynthBeep(880, 0.15);
-
-                            // Panggil method Livewire langsung
-                            @this.scanBarcodeDirect(decodedText);
+                        { fps: 10, qrbox: { width: 200, height: 200 }, aspectRatio: 1.0 },
+                        (decoded) => {
+                            navigator.vibrate && navigator.vibrate(100);
+                            this.beep(880, 0.15);
+                            @this.scanBarcodeDirect(decoded);
                         },
-                        (errorMessage) => {
-                            // frame parsing error (normal saat mencari barcode)
-                        }
+                        () => {}
                     ).catch(err => {
-                        console.error("Gagal membuka kamera: ", err);
-                        alert("Tidak dapat mengakses kamera: " + (err.message || err));
+                        console.error("Gagal kamera:", err);
+                        alert("Tidak dapat membuka kamera: " + (err.message || err));
                         this.isScannerOpen = false;
                     });
                 },
 
                 closeScanner() {
                     if (this.html5QrCode) {
-                        this.html5QrCode.stop().then(() => {
-                            this.html5QrCode.clear();
-                            this.html5QrCode = null;
-                        }).catch(err => {
-                            console.error("Gagal menutup scanner: ", err);
-                        });
+                        this.html5QrCode.stop()
+                            .then(() => { this.html5QrCode.clear(); this.html5QrCode = null; })
+                            .catch(e => console.error(e));
                     }
                     this.isScannerOpen = false;
                 }

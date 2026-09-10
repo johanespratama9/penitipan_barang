@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Sarinah Street') }}</title>
 
         @fonts
 
@@ -18,34 +18,42 @@
         @endif
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
-            @if (Route::has('login'))
-                <nav class="flex items-center justify-end gap-4">
+        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6">
+            <nav class="flex flex-wrap items-center justify-between gap-3">
+                <a href="/" class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-sm">S</span>
+                    Sarinah Street
+                </a>
+                <div class="flex items-center gap-2">
+                    <a
+                        href="{{ route('titip.index') }}"
+                        class="inline-block px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs shadow-sm transition"
+                    >
+                        Titipkan Barang
+                    </a>
                     @auth
                         <a
-                            href="{{ url('/dashboard') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
+                            href="/admin"
+                            class="inline-block px-3.5 py-1.5 border border-slate-300 dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition"
                         >
                             Dashboard
                         </a>
                     @else
                         <a
-                            href="{{ route('login') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
+                            href="{{ route('penitip.register') }}"
+                            class="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold transition"
                         >
-                            Log in
+                            Daftar Penitip
                         </a>
-
-                        @if (Route::has('register'))
-                            <a
-                                href="{{ route('register') }}"
-                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
-                            </a>
-                        @endif
+                        <a
+                            href="/admin/login"
+                            class="inline-block px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition"
+                        >
+                            Masuk
+                        </a>
                     @endauth
-                </nav>
-            @endif
+                </div>
+            </nav>
         </header>
         <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
             <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">

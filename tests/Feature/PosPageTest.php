@@ -17,6 +17,7 @@ class PosPageTest extends TestCase
     use RefreshDatabase;
 
     protected User $cashier;
+    protected User $admin;
     protected Product $product;
 
     protected function setUp(): void
@@ -26,6 +27,10 @@ class PosPageTest extends TestCase
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'kasir', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'penitip', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'admin',       'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'kasir',       'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'penitip',     'guard_name' => 'web']);
 
         $this->cashier = User::firstOrCreate(
             ['email' => 'cashier_pos@test.com'],
@@ -33,10 +38,18 @@ class PosPageTest extends TestCase
         );
         $this->cashier->syncRoles(['kasir']);
 
+        $this->admin = User::firstOrCreate(
+            ['email' => 'admin_pos@test.com'],
+            ['name' => 'Admin POS', 'password' => bcrypt('password')]
+        );
+        $this->admin->syncRoles(['admin']);
+
         $category = Category::create(['name' => 'Elektronik', 'slug' => 'elektronik']);
         $consignor = Consignor::create([
             'name' => 'Budi Santoso',
             'phone' => '081234567890',
+            'name'   => 'Budi Santoso',
+            'phone'  => '081234567890',
             'status' => 'active',
         ]);
 
@@ -48,19 +61,41 @@ class PosPageTest extends TestCase
             'name' => 'Keyboard Wireless',
             'selling_price' => 350000,
             'commission_type' => 'percentage',
+            'category_id'      => $category->id,
+            'consignor_id'     => $consignor->id,
+            'code'             => 'PRD-00099',
+            'barcode'          => '899999999999',
+            'name'             => 'Keyboard Wireless',
+            'selling_price'    => 350000,
+            'commission_type'  => 'percentage',
             'commission_value' => 20,
             'stock' => 5,
             'status' => 'available',
+            'stock'            => 5,
+            'status'           => 'available',
         ]);
     }
 
+    /** Admin bisa render /admin/pos dan melihat string Scan Kamera HP */
     public function test_kasir_can_render_pos_page(): void
     {
         $this->actingAs($this->cashier);
+        // Kasir tidak lagi mengakses /admin/pos (akan di-redirect ke /pos)
+        // Test ini dijalankan sebagai admin yang masih bisa akses /admin/pos
+        $this->actingAs($this->admin);
 
         $response = $this->get('/admin/pos');
         $response->assertStatus(200);
         $response->assertSee('Scan Kamera HP');
+    }
+
+    /** Kasir yang mencoba akses /admin/pos akan di-redirect ke /pos */
+    public function test_kasir_redirected_from_admin_pos_to_pos_terminal(): void
+    {
+        $this->actingAs($this->cashier);
+
+        $response = $this->get('/admin/pos');
+        $response->assertRedirect('/pos');
     }
 
     public function test_pos_livewire_add_to_cart_and_scan(): void
@@ -86,6 +121,31 @@ class PosPageTest extends TestCase
 
         // Pastikan stok berkurang dari 5 menjadi 3
         $this->assertEquals(3, $this->product->fresh()->stock);
+    }
+
+    public function test_pos_checkout_modal_workflow(): void
+    {
+        $this->actingAs($this->cashier);
+
+        Livewire::test(Pos::class)
+            ->assertSet('isCheckoutModalOpen', false)
+            ->call('addToCart', $this->product->id)
+            ->call('openCheckoutModal')
+            ->assertSet('isCheckoutModalOpen', true)
+            ->call('closeCheckoutModal')
+            ->assertSet('isCheckoutModalOpen', false);
+    }
+
+    public function test_pos_renders_brand_and_order_number(): void
+    {
+        $this->actingAs($this->cashier);
+        // Gunakan admin untuk akses /admin/pos
+        $this->actingAs($this->admin);
+
+        $response = $this->get('/admin/pos');
+        $response->assertStatus(200);
+        $response->assertSee('SARINAH STREET');
+        $response->assertSee('ORDER #');
     }
 }
 

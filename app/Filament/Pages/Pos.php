@@ -53,10 +53,27 @@ class Pos extends Page
     public float $paid_amount = 0;
     public string $payment_method = 'cash';
     public ?array $last_sale = null;
+    public string $orderNumber = '1042';
+    public bool $isCheckoutModalOpen = false;
 
     public function mount(): void
     {
         $this->cart = [];
+        $this->orderNumber = (string) rand(1001, 9999);
+    }
+
+    public function openCheckoutModal(): void
+    {
+        if (empty($this->cart)) {
+            Notification::make()->title('Keranjang transaksi masih kosong!')->warning()->send();
+            return;
+        }
+        $this->isCheckoutModalOpen = true;
+    }
+
+    public function closeCheckoutModal(): void
+    {
+        $this->isCheckoutModalOpen = false;
     }
 
     public function addToCart(int $productId): void
@@ -81,6 +98,7 @@ class Pos extends Page
                 'name' => $product->name,
                 'price' => (float) $product->selling_price,
                 'stock' => (int) $product->stock,
+                'image' => $product->image,
                 'quantity' => 1,
             ];
         }
@@ -188,6 +206,50 @@ class Pos extends Page
         return max(0, $this->paid_amount - $this->getTotalProperty());
     }
 
+    public function setPaidAmount(float $amount): void
+    {
+        $this->paid_amount = $amount;
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->selectedCategory = null;
+    }
+
+    public function getCashSuggestionsProperty(): array
+    {
+        $total = $this->getTotalProperty();
+        if ($total <= 0) {
+            return [];
+        }
+
+        $suggestions = [$total]; // Uang Pas
+
+        // Standard IDR common denominations
+        $denominations = [10000, 20000, 50000, 100000, 200000, 500000];
+        foreach ($denominations as $denom) {
+            if ($denom > $total && !in_array($denom, $suggestions)) {
+                $suggestions[] = $denom;
+            }
+        }
+
+        // Round up to next 10.000
+        $next10k = ceil($total / 10000) * 10000;
+        if ($next10k > $total && !in_array($next10k, $suggestions)) {
+            $suggestions[] = $next10k;
+        }
+
+        // Round up to next 50.000
+        $next50k = ceil($total / 50000) * 50000;
+        if ($next50k > $total && !in_array($next50k, $suggestions)) {
+            $suggestions[] = $next50k;
+        }
+
+        sort($suggestions);
+        return array_slice(array_unique($suggestions), 0, 4);
+    }
+
     public function checkout(): void
     {
         if (empty($this->cart)) {
@@ -250,6 +312,8 @@ class Pos extends Page
             $this->discount = 0;
             $this->paid_amount = 0;
             $this->customer_name = '';
+            $this->isCheckoutModalOpen = false;
+            $this->orderNumber = (string) rand(1001, 9999);
 
         } catch (\Exception $e) {
             Notification::make()
