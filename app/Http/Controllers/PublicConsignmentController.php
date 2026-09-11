@@ -7,6 +7,7 @@ use App\Models\Consignment;
 use App\Models\Consignor;
 use App\Models\User;
 use App\Services\ConsignmentService;
+use App\Services\ImageService;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -97,10 +98,14 @@ class PublicConsignmentController extends Controller
                 ]);
             }
 
-            // 2. Upload foto barang jika diunggah
+            // 2. Upload foto barang jika diunggah (dikonversi ke WebP otomatis)
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('products', 'public');
+                $imagePath = app(ImageService::class)->storeAsWebp(
+                    $request->file('image'),
+                    directory: 'products',
+                    quality: 82,
+                );
             }
 
             // 3. Buat dokumen consignment status submitted

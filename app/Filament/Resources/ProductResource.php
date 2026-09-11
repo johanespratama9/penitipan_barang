@@ -223,8 +223,13 @@ class ProductResource extends Resource
                             ->directory('products')
                             ->visibility('public')
                             ->maxSize(4096)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
                             ->columnSpanFull()
-                            ->helperText('Format JPG, PNG, WEBP max 4MB.'),
+                            ->helperText('Format JPG, PNG, WEBP, GIF max 4MB. Otomatis dikonversi ke WebP.')
+                            ->saveUploadedFileUsing(function (\Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file): string {
+                                return app(\App\Services\ImageService::class)
+                                    ->storeAsWebp($file, directory: 'products', quality: 82);
+                            }),
 
                         Textarea::make('description')
                             ->label('Deskripsi / Catatan Barang')
