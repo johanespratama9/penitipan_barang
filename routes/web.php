@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PenitipAuthController;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('home');
+})->name('home');
+
 
 // ── Pendaftaran & Autentikasi Khusus Mitra Penitip ─────────────
 Route::get('/daftar-penitip', [PenitipAuthController::class, 'showRegisterForm'])->name('penitip.register');
