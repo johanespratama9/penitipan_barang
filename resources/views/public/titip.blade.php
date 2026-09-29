@@ -34,7 +34,7 @@
                 </div>
 
                 <!-- Link to Admin/Penitip Dashboard -->
-                <a href="/admin" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                <a href="/dasbor" class="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     <span>Dashboard</span>
                 </a>
@@ -87,7 +87,7 @@
                             Silakan bawa barang Anda ke toko Sarinah Street untuk diverifikasi dan langsung dipajang di etalase/POS kasir.
                         </p>
                         <div class="mt-4 flex gap-3">
-                            <a href="/admin/consignments" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition">
+                            <a href="/dasbor/consignments" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition">
                                 Pantau di Dashboard &rarr;
                             </a>
                         </div>

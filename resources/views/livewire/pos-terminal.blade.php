@@ -157,7 +157,7 @@
 <div style="background:var(--navy-3);border-bottom:1px solid var(--border);padding:0 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;height:52px;">
 
     @if(auth()->user()?->hasAnyRole(['admin','super_admin']))
-    <a href="/admin" title="Dashboard Admin"
+    <a href="/dasbor" title="Dashboard Admin"
        style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--navy-2);border:1px solid var(--border);border-radius:8px;color:var(--muted);text-decoration:none;flex-shrink:0;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>

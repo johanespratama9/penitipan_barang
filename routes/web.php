@@ -21,7 +21,7 @@ Route::post('/titip', [PublicConsignmentController::class, 'store'])->name('titi
 
 // ── POS Terminal: standalone full-screen, wajib login ────────────
 // Unauthenticated users are sent to Filament login page
-Route::get('/login', fn() => redirect('/admin/login'))->name('login');
+Route::get('/login', fn() => redirect('/dasbor/login'))->name('login');
 
 Route::middleware(['auth:web'])->group(function () {
     Route::get('/pos', PosTerminal::class)->name('pos.terminal');

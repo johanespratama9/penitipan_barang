@@ -26,7 +26,7 @@
             </a>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-slate-500 hidden sm:inline">Sudah punya akun?</span>
-                <a href="/admin/login" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-amber-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
+                <a href="/dasbor/login" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-amber-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
                     Masuk / Login &rarr;
                 </a>
             </div>
@@ -224,7 +224,7 @@
                         <div class="text-center pt-2">
                             <p class="text-xs text-slate-500">
                                 Sudah memiliki akun mitra?
-                                <a href="/admin/login" class="font-bold text-amber-600 hover:underline">Masuk ke akun Anda</a>
+                                <a href="/dasbor/login" class="font-bold text-amber-600 hover:underline">Masuk ke akun Anda</a>
                             </p>
                         </div>
                     </form>

@@ -33,7 +33,7 @@
                     </a>
                     @auth
                         <a
-                            href="/admin"
+                            href="/dasbor"
                             class="inline-block px-3.5 py-1.5 border border-slate-300 dark:border-slate-700 hover:border-slate-400 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition"
                         >
                             Dashboard
@@ -46,7 +46,7 @@
                             Daftar Penitip
                         </a>
                         <a
-                            href="/admin/login"
+                            href="/dasbor/login"
                             class="inline-block px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold transition"
                         >
                             Masuk
