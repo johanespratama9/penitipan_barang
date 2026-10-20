@@ -27,3 +27,11 @@ Route::get('/login', fn() => redirect('/dasbor/login'))->name('login');
 Route::middleware(['auth:web'])->group(function () {
     Route::get('/pos', PosTerminal::class)->name('pos.terminal');
 });
+
+// Logout route umum (support GET & POST)
+Route::match(['get', 'post'], '/logout', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/dasbor/login');
+})->name('logout');
