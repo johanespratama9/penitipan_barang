@@ -14,10 +14,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
@@ -97,12 +97,13 @@ class UserResource extends Resource
                         Select::make('roles')
                             ->label('Role')
                             ->relationship('roles', 'name')
-                            ->options([
+                            ->getOptionLabelFromRecordUsing(fn ($record) => match ($record->name) {
                                 'super_admin' => 'Super Admin',
                                 'admin'       => 'Admin',
                                 'kasir'       => 'Kasir',
                                 'penitip'     => 'Penitip',
-                            ])
+                                default       => $record->name,
+                            })
                             ->multiple()
                             ->preload()
                             ->required()
