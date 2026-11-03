@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Responses\LogoutResponse;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -57,5 +59,13 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
             ]);
+    }
+
+    public function register(): void
+    {
+        parent::register();
+
+        // Override logout response agar kasir diarahkan ke login page (bukan /pos)
+        $this->app->bind(LogoutResponseContract::class, LogoutResponse::class);
     }
 }

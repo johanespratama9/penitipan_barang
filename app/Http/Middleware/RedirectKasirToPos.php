@@ -20,8 +20,8 @@ class RedirectKasirToPos
             $user !== null
             && $user->hasRole('kasir')
             && ! $user->hasAnyRole(['admin', 'super_admin'])
-            // Allow /admin/login and /admin/logout so kasir can still authenticate
-            && ! $request->is('admin/login', 'admin/logout', 'admin/login/*')
+            // Allow dasbor/login and dasbor/logout so kasir can still authenticate/logout
+            && ! $request->is('dasbor/login', 'dasbor/logout', 'dasbor/login/*')
         ) {
             return redirect('/pos');
         }
