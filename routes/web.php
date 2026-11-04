@@ -1,14 +1,17 @@
 <?php
 
+use App\Http\Controllers\DigitalMenuController;
+use App\Http\Controllers\PenitipAuthController;
 use App\Http\Controllers\PublicConsignmentController;
 use App\Livewire\PosTerminal;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\PenitipAuthController;
-
 Route::get('/', function () {
     return view('home');
 })->name('home');
+
+// ── Menu Digital (Publik via Barcode / QR Meja - Hanya Tampilan) ──
+Route::get('/menu', [DigitalMenuController::class, 'index'])->name('menu.digital');
 
 
 // ── Pendaftaran & Autentikasi Khusus Mitra Penitip ─────────────
