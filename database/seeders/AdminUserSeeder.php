@@ -30,6 +30,16 @@ class AdminUserSeeder extends Seeder
         );
         $kasir->syncRoles(['kasir']);
 
+        // Dapur User
+        $dapur = User::firstOrCreate(
+            ['email' => 'dapur@penitipan.test'],
+            [
+                'name' => 'Staf Dapur',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $dapur->syncRoles(['dapur']);
+
         // Penitip User
         $penitip = User::firstOrCreate(
             ['email' => 'penitip@penitipan.test'],

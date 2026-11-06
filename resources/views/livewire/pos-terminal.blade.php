@@ -210,6 +210,19 @@
         </button>
     </form>
 
+    <!-- Layar Dapur Link -->
+    <a href="{{ route('kitchen.display') }}" target="_blank"
+       title="Buka Layar Dapur (KDS)"
+       style="display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.12));border:1px solid rgba(245,158,11,.4);border-radius:8px;color:#FBBF24;font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+        <span style="font-size:14px;">🍳</span>
+        <span class="hidden sm:inline">Layar Dapur</span>
+        @if($this->activeKitchenCount > 0)
+            <span style="background:#EF4444;color:#fff;font-size:10px;font-weight:900;padding:1px 6px;border-radius:999px;line-height:1.3;box-shadow:0 0 8px rgba(239,68,68,.6);">
+                {{ $this->activeKitchenCount }}
+            </span>
+        @endif
+    </a>
+
     <!-- Kasir badge -->
     <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;background:var(--navy-2);border:1px solid var(--border);height:34px;padding:0 10px;border-radius:8px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7E92B2" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -373,15 +386,24 @@
     <div class="pos-right {{ $mobileView === 'cart' ? '' : 'hidden lg:flex' }}" style="flex-direction:column;">
 
         <!-- Order Header -->
-        <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;">
-            <div style="flex-shrink:0;">
-                <span style="font-size:14px;font-weight:800;color:#fff;">ORDER #{{ $orderNumber }}</span>
-                @if($this->totalItemCount > 0)
-                    <span style="margin-left:5px;font-size:11px;color:var(--muted);">({{ $this->totalItemCount }} item)</span>
-                @endif
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <div style="flex-shrink:0;">
+                    <span style="font-size:14px;font-weight:800;color:#fff;">ORDER #{{ $orderNumber }}</span>
+                    @if($this->totalItemCount > 0)
+                        <span style="margin-left:5px;font-size:11px;color:var(--muted);">({{ $this->totalItemCount }} item)</span>
+                    @endif
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#FBBF24;background:rgba(245,158,11,.1);padding:2px 7px;border-radius:6px;border:1px solid rgba(245,158,11,.25);font-weight:700;">
+                    <span>🍳 Auto Masuk Dapur</span>
+                </div>
             </div>
-            <input type="text" wire:model.blur="customer_name" placeholder="Nama pelanggan..."
-                   style="flex:1;min-width:0;padding:5px 8px;font-size:11px;background:var(--navy-2);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <input type="text" wire:model.blur="customer_name" placeholder="Nama pelanggan..."
+                       style="width:100%;padding:5px 8px;font-size:11px;background:var(--navy-2);border:1px solid var(--border);border-radius:6px;color:#fff;outline:none;" />
+                <input type="text" wire:model.blur="table_number" placeholder="No. Meja / Bungkus..."
+                       style="width:100%;padding:5px 8px;font-size:11px;background:var(--navy-2);border:1px solid var(--border);border-radius:6px;color:#93C5FD;font-weight:700;outline:none;" />
+            </div>
         </div>
 
         <!-- Cart Items -->
@@ -505,11 +527,41 @@
                     <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ $this->totalItemCount }} item pesanan</div>
                 </div>
 
-                <!-- Nama pelanggan -->
+                <!-- Nama pelanggan & No Meja -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;letter-spacing:.05em;">Nama Pelanggan</div>
+                        <input type="text" wire:model="customer_name" placeholder="Pelanggan Umum"
+                               style="width:100%;padding:9px 12px;font-size:13px;background:var(--navy-2);border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;" />
+                    </div>
+                    <div>
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#93C5FD;margin-bottom:6px;letter-spacing:.05em;">Nomor Meja</div>
+                        <input type="text" wire:model="table_number" placeholder="Contoh: Meja 03"
+                               style="width:100%;padding:9px 12px;font-size:13px;background:var(--navy-2);border:1px solid rgba(96,165,250,.4);border-radius:10px;color:#fff;font-weight:800;outline:none;" />
+                    </div>
+                </div>
+
+                <!-- Pintasan Meja -->
                 <div>
-                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;letter-spacing:.05em;">Nama Pelanggan</div>
-                    <input type="text" wire:model="customer_name" placeholder="Pelanggan Umum"
-                           style="width:100%;padding:9px 12px;font-size:13px;background:var(--navy-2);border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;" />
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;letter-spacing:.05em;">Pintasan Meja:</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                        @foreach(['Meja 01', 'Meja 02', 'Meja 03', 'Meja 04', 'Meja 05', 'Meja 06', 'Meja 07', 'Meja 08', 'Bungkus / Takeaway'] as $tbl)
+                            <button type="button" wire:click="$set('table_number', '{{ $tbl }}')"
+                                    style="padding:4px 8px;font-size:11px;font-weight:700;border-radius:6px;background:{{ $table_number === $tbl ? '#2563EB' : 'var(--navy-2)' }};border:1px solid {{ $table_number === $tbl ? '#60A5FA' : 'var(--border)' }};color:{{ $table_number === $tbl ? '#fff' : 'var(--muted)' }};cursor:pointer;">
+                                {{ $tbl }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Catatan Dapur -->
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#FBBF24;letter-spacing:.05em;">🍳 Catatan Pesanan Dapur</span>
+                        <span style="font-size:10px;color:var(--muted);">Terlihat di Layar Dapur</span>
+                    </div>
+                    <textarea wire:model="order_notes" rows="2" placeholder="Contoh: Pedas sedang, jangan pakai bawang, es dipisah..."
+                              style="width:100%;padding:8px 12px;font-size:12px;background:var(--navy-2);border:1px solid var(--border);border-radius:10px;color:#fff;outline:none;resize:none;font-family:inherit;"></textarea>
                 </div>
 
                 <!-- Metode bayar -->
@@ -598,44 +650,145 @@
 {{-- ═══════════════════════════ RECEIPT MODAL ═══════════════════════════ --}}
 @if($last_sale)
     <div style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);">
-        <div style="background:#fff;border-radius:20px;max-width:360px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);display:flex;flex-direction:column;color:#111;">
+        <div style="background:#fff;border-radius:20px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6);display:flex;flex-direction:column;color:#111;">
+            <!-- Header with close -->
             <div class="no-print" style="padding:14px 16px;background:#059669;display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-size:14px;font-weight:800;color:#fff;">✓ Transaksi Berhasil!</span>
+                <div>
+                    <span style="font-size:14px;font-weight:800;color:#fff;">✓ Transaksi Berhasil!</span>
+                    <div style="font-size:11px;color:#A7F3D0;margin-top:2px;">Order otomatis masuk ke Layar Dapur</div>
+                </div>
                 <button wire:click="$set('last_sale', null)" style="background:none;border:none;color:#A7F3D0;cursor:pointer;font-size:20px;line-height:1;">✕</button>
             </div>
-            <div class="pos-scroll" style="padding:16px;max-height:65vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;" id="pos-receipt">
-                <div style="text-align:center;padding-bottom:10px;border-bottom:1px dashed #ccc;">
-                    <div style="font-size:15px;font-weight:900;letter-spacing:.08em;">SARINAH STREET</div>
-                    <div style="color:#555;margin-top:2px;">{{ $last_sale['invoice_number'] }}</div>
-                    <div style="color:#999;font-size:11px;margin-top:1px;">{{ $last_sale['time'] }} &bull; {{ strtoupper($last_sale['payment_method']) }}</div>
-                </div>
-                <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
-                    @foreach($last_sale['items'] as $item)
-                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;gap:8px;">
-                            <div>
-                                <div style="font-weight:700;">{{ $item['name'] }}</div>
-                                <div style="color:#888;font-size:11px;">{{ $item['qty'] }} pcs</div>
-                            </div>
-                            <div style="font-weight:700;white-space:nowrap;">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</div>
-                        </div>
-                    @endforeach
-                </div>
-                <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
-                    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;"><span>TOTAL</span><span>Rp {{ number_format($last_sale['total'], 0, ',', '.') }}</span></div>
-                    <div style="display:flex;justify-content:space-between;color:#666;margin-top:4px;"><span>Dibayar</span><span>Rp {{ number_format($last_sale['paid_amount'], 0, ',', '.') }}</span></div>
-                    <div style="display:flex;justify-content:space-between;color:#059669;font-weight:700;"><span>Kembalian</span><span>Rp {{ number_format($last_sale['change_amount'], 0, ',', '.') }}</span></div>
-                </div>
-                <div style="text-align:center;padding-top:10px;color:#bbb;font-size:11px;">Terima kasih sudah berbelanja!</div>
+
+            <!-- Tab Switcher (Kasir vs Dapur) -->
+            <div class="no-print" style="display:flex;border-bottom:1px solid #E5E7EB;background:#F9FAFB;padding:4px 8px;gap:6px;">
+                <button type="button" wire:click="setReceiptTab('customer')"
+                        style="flex:1;padding:8px 10px;font-size:12px;font-weight:800;border-radius:8px;border:none;cursor:pointer;transition:.15s;background:{{ $receiptTab === 'customer' ? '#fff' : 'transparent' }};color:{{ $receiptTab === 'customer' ? '#1E40AF' : '#6B7280' }};box-shadow:{{ $receiptTab === 'customer' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }};display:flex;align-items:center;justify-content:center;gap:5px;">
+                    📄 Struk Kasir
+                </button>
+                <button type="button" wire:click="setReceiptTab('kitchen')"
+                        style="flex:1;padding:8px 10px;font-size:12px;font-weight:800;border-radius:8px;border:none;cursor:pointer;transition:.15s;background:{{ $receiptTab === 'kitchen' ? '#FEF3C7' : 'transparent' }};color:{{ $receiptTab === 'kitchen' ? '#92400E' : '#6B7280' }};box-shadow:{{ $receiptTab === 'kitchen' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }};display:flex;align-items:center;justify-content:center;gap:5px;">
+                    🍳 Bon Dapur (KOT)
+                </button>
             </div>
-            <div class="no-print" style="padding:12px 16px;background:#F9FAFB;border-top:1px solid #E5E7EB;display:flex;gap:8px;">
-                <button onclick="window.print()"
-                        style="flex:1;padding:10px;border-radius:10px;background:#fff;border:1px solid #D1D5DB;color:#374151;font-size:12px;font-weight:700;cursor:pointer;">
-                    🖨 Cetak Struk
-                </button>
-                <button wire:click="$set('last_sale', null)"
-                        style="flex:1;padding:10px;border-radius:10px;background:#2563EB;color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;">
-                    + Order Baru
-                </button>
+
+            <!-- Printable Receipt Container -->
+            <div class="pos-scroll" style="padding:16px;max-height:65vh;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;" id="pos-receipt">
+                @if($receiptTab === 'customer')
+                    <!-- STRUK KASIR PELANGGAN -->
+                    <div style="text-align:center;padding-bottom:10px;border-bottom:1px dashed #ccc;">
+                        <div style="font-size:15px;font-weight:900;letter-spacing:.08em;">SARINAH STREET</div>
+                        <div style="color:#555;margin-top:2px;">{{ $last_sale['invoice_number'] }}</div>
+                        @if(!empty($last_sale['table_number']))
+                            <div style="display:inline-block;margin-top:4px;padding:2px 8px;background:#F3F4F6;border:1px solid #D1D5DB;border-radius:4px;font-weight:900;font-size:11px;">
+                                MEJA: {{ $last_sale['table_number'] }}
+                            </div>
+                        @endif
+                        <div style="color:#777;font-size:11px;margin-top:3px;">{{ $last_sale['time'] }} &bull; {{ strtoupper($last_sale['payment_method']) }} &bull; {{ $last_sale['cashier_name'] ?? 'Kasir' }}</div>
+                        @if(!empty($last_sale['customer_name']))
+                            <div style="color:#555;font-size:11px;">Pelanggan: {{ $last_sale['customer_name'] }}</div>
+                        @endif
+                    </div>
+                    <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
+                        @foreach($last_sale['items'] as $item)
+                            <div style="display:flex;justify-content:space-between;margin-bottom:5px;gap:8px;">
+                                <div>
+                                    <div style="font-weight:700;">{{ $item['name'] }}</div>
+                                    <div style="color:#888;font-size:11px;">{{ $item['qty'] }} pcs</div>
+                                </div>
+                                <div style="font-weight:700;white-space:nowrap;">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div style="padding:10px 0;border-bottom:1px dashed #ccc;">
+                        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;"><span>TOTAL</span><span>Rp {{ number_format($last_sale['total'], 0, ',', '.') }}</span></div>
+                        <div style="display:flex;justify-content:space-between;color:#666;margin-top:4px;"><span>Dibayar</span><span>Rp {{ number_format($last_sale['paid_amount'], 0, ',', '.') }}</span></div>
+                        <div style="display:flex;justify-content:space-between;color:#059669;font-weight:700;"><span>Kembalian</span><span>Rp {{ number_format($last_sale['change_amount'], 0, ',', '.') }}</span></div>
+                    </div>
+                    <div style="text-align:center;padding-top:10px;color:#888;font-size:11px;">
+                        Terima kasih sudah berbelanja!<br>Pesanan sedang diproses di dapur.
+                    </div>
+                @else
+                    <!-- BON DAPUR (KITCHEN ORDER TICKET) -->
+                    <div style="text-align:center;padding-bottom:10px;border-bottom:2px dashed #000;">
+                        <div style="font-size:16px;font-weight:900;letter-spacing:.05em;">*** TIKET DAPUR (KOT) ***</div>
+                        <div style="margin-top:6px;padding:6px;background:#000;color:#fff;font-size:18px;font-weight:900;border-radius:4px;letter-spacing:1px;">
+                            {{ !empty($last_sale['table_number']) ? strtoupper($last_sale['table_number']) : 'TAKEAWAY / BUNGKUS' }}
+                        </div>
+                        <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:11px;color:#333;">
+                            <span>#{{ $last_sale['invoice_number'] }}</span>
+                            <span>{{ $last_sale['time'] }}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-top:2px;">
+                            <span>Kasir: {{ $last_sale['cashier_name'] ?? 'Kasir' }}</span>
+                            <span>Plg: {{ $last_sale['customer_name'] ?? '-' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Kitchen Items -->
+                    <div style="padding:10px 0;border-bottom:2px dashed #000;">
+                        @foreach($last_sale['items'] as $item)
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;font-size:13px;">
+                                <div style="display:flex;gap:8px;align-items:baseline;">
+                                    <span style="font-size:16px;font-weight:900;border:1.5px solid #000;border-radius:4px;min-width:26px;text-align:center;padding:1px 3px;">
+                                        {{ $item['qty'] }}x
+                                    </span>
+                                    <div>
+                                        <div style="font-weight:900;">{{ $item['name'] }}</div>
+                                        @if(!empty($item['notes']))
+                                            <div style="font-size:11px;font-style:italic;color:#444;">↳ {{ $item['notes'] }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Kitchen Order Notes -->
+                    @if(!empty($last_sale['order_notes']))
+                        <div style="padding:8px;margin-top:8px;background:#F3F4F6;border:1px dashed #666;border-radius:4px;">
+                            <div style="font-weight:900;font-size:11px;text-transform:uppercase;">⚠️ Catatan Khusus Dapur:</div>
+                            <div style="font-size:12px;font-weight:700;color:#000;margin-top:2px;">{{ $last_sale['order_notes'] }}</div>
+                        </div>
+                    @endif
+
+                    <div style="text-align:center;padding-top:10px;font-size:10px;color:#666;">
+                        STATUS: ⏳ MENUNGGU DIMASAK<br>
+                        Tercetak: {{ now()->format('d/m/Y H:i:s') }}
+                    </div>
+                @endif
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="no-print" style="padding:12px 16px;background:#F9FAFB;border-top:1px solid #E5E7EB;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;gap:8px;">
+                    <button onclick="window.print()" wire:click="markKitchenPrinted({{ $last_sale['id'] }})"
+                            style="flex:1;padding:10px;border-radius:10px;background:#fff;border:1px solid #D1D5DB;color:#1F2937;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                        <span>🖨</span>
+                        <span>{{ $receiptTab === 'kitchen' ? 'Cetak Bon Dapur' : 'Cetak Struk Kasir' }}</span>
+                    </button>
+                    @if($receiptTab === 'customer')
+                        <button type="button" wire:click="setReceiptTab('kitchen')"
+                                style="padding:10px 14px;border-radius:10px;background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">
+                            🍳 Bon Dapur
+                        </button>
+                    @else
+                        <button type="button" wire:click="setReceiptTab('customer')"
+                                style="padding:10px 14px;border-radius:10px;background:#EFF6FF;border:1px solid #93C5FD;color:#1D4ED8;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">
+                            📄 Struk Kasir
+                        </button>
+                    @endif
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a href="{{ route('kitchen.display') }}" target="_blank"
+                       style="flex:1;padding:9px;border-radius:10px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;font-size:11px;font-weight:800;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">
+                        <span>🍳 Layar Dapur ↗</span>
+                    </a>
+                    <button wire:click="$set('last_sale', null)"
+                            style="flex:1;padding:9px;border-radius:10px;background:#2563EB;color:#fff;font-size:12px;font-weight:800;border:none;cursor:pointer;">
+                        + Order Baru
+                    </button>
+                </div>
             </div>
         </div>
     </div>

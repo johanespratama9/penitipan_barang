@@ -23,6 +23,9 @@ class RoleSeeder extends Seeder
         // Kasir - role tanpa permission khusus (assign manual jika perlu)
         Role::firstOrCreate(['name' => 'kasir', 'guard_name' => 'web']);
 
+        // Dapur - role khusus display pesanan dapur (KDS)
+        Role::firstOrCreate(['name' => 'dapur', 'guard_name' => 'web']);
+
         // Penitip - role tanpa permission khusus
         Role::firstOrCreate(['name' => 'penitip', 'guard_name' => 'web']);
     }

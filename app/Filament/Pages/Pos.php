@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Services\SaleService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -46,6 +47,9 @@ class Pos extends Page
     public string $search = '';
     public string $barcode = '';
     public string $customer_name = '';
+    public string $table_number = '';
+    public string $order_notes = '';
+    public string $receiptTab = 'customer'; // 'customer' | 'kitchen'
     public ?int $selectedCategory = null;
     public string $mobileView = 'catalog'; // 'catalog' atau 'cart'
     public array $cart = [];
@@ -170,6 +174,9 @@ class Pos extends Page
         $this->discount = 0;
         $this->paid_amount = 0;
         $this->customer_name = '';
+        $this->table_number = '';
+        $this->order_notes = '';
+        $this->receiptTab = 'customer';
         $this->last_sale = null;
     }
 
@@ -277,6 +284,9 @@ class Pos extends Page
             $sale = $saleService->createSale(
                 [
                     'customer_name' => $this->customer_name ?: 'Pelanggan Umum',
+                    'table_number' => $this->table_number ?: null,
+                    'order_notes' => $this->order_notes ?: null,
+                    'kitchen_status' => 'pending',
                     'discount' => $this->discount,
                     'paid_amount' => $this->payment_method === 'cash' ? $this->paid_amount : $total,
                     'payment_method' => $this->payment_method,
@@ -286,7 +296,13 @@ class Pos extends Page
             );
 
             $this->last_sale = [
+                'id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
+                'table_number' => $sale->table_number,
+                'order_notes' => $sale->order_notes,
+                'kitchen_status' => $sale->kitchen_status,
+                'customer_name' => $sale->customer_name,
+                'cashier_name' => auth()->user()?->name ?? 'Kasir',
                 'total' => $sale->total,
                 'paid_amount' => $sale->paid_amount,
                 'change_amount' => $sale->change_amount,
@@ -295,6 +311,7 @@ class Pos extends Page
                 'items' => $sale->items->map(fn ($i) => [
                     'name' => $i->product_name,
                     'qty' => $i->quantity,
+                    'notes' => $i->notes,
                     'subtotal' => $i->subtotal,
                 ])->toArray(),
             ];
@@ -303,7 +320,7 @@ class Pos extends Page
 
             Notification::make()
                 ->title('Transaksi Berhasil!')
-                ->body("Invoice {$sale->invoice_number} berhasil diterbitkan.")
+                ->body("Invoice {$sale->invoice_number} berhasil diterbitkan dan masuk ke Dapur.")
                 ->success()
                 ->send();
 
@@ -312,6 +329,9 @@ class Pos extends Page
             $this->discount = 0;
             $this->paid_amount = 0;
             $this->customer_name = '';
+            $this->table_number = '';
+            $this->order_notes = '';
+            $this->receiptTab = 'customer';
             $this->isCheckoutModalOpen = false;
             $this->orderNumber = (string) rand(1001, 9999);
 
@@ -322,6 +342,26 @@ class Pos extends Page
                 ->danger()
                 ->send();
         }
+    }
+
+    public function setReceiptTab(string $tab): void
+    {
+        $this->receiptTab = $tab;
+    }
+
+    public function markKitchenPrinted(int $saleId): void
+    {
+        Sale::where('id', $saleId)->update(['kitchen_printed_at' => now()]);
+        if (isset($this->last_sale['id']) && $this->last_sale['id'] === $saleId) {
+            $this->last_sale['kitchen_printed_at'] = now()->format('H:i');
+        }
+    }
+
+    public function getActiveKitchenCountProperty(): int
+    {
+        return Sale::whereIn('kitchen_status', ['pending', 'cooking', 'ready'])
+            ->whereDate('created_at', today())
+            ->count();
     }
 
     public function getCategoriesProperty()

@@ -30,7 +30,7 @@ class DashboardBrandingTest extends TestCase
         );
         $admin->syncRoles(['admin']);
 
-        $response = $this->actingAs($admin)->get('/admin');
+        $response = $this->actingAs($admin)->get('/dasbor');
         $response->assertStatus(200);
         $response->assertSee('Sarinah Street');
 

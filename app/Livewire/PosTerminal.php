@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Services\SaleService;
 use Livewire\Component;
 
@@ -13,6 +14,9 @@ class PosTerminal extends Component
     public string  $search            = '';
     public string  $barcode           = '';
     public string  $customer_name     = '';
+    public string  $table_number      = '';
+    public string  $order_notes       = '';
+    public string  $receiptTab        = 'customer'; // 'customer' | 'kitchen'
     public ?int    $selectedCategory  = null;
     public string  $mobileView        = 'catalog';
     public array   $cart              = [];
@@ -25,6 +29,12 @@ class PosTerminal extends Component
 
     public function mount(): void
     {
+        // Staf dapur diarahkan ke layar dapur
+        if (auth()->user()?->hasRole('dapur') && ! auth()->user()?->hasAnyRole(['admin', 'super_admin'])) {
+            $this->redirectRoute('kitchen.display');
+            return;
+        }
+
         // Hanya bisa diakses oleh role yang berwenang
         if (! auth()->user()?->hasAnyRole(['admin', 'kasir', 'super_admin'])) {
             abort(403, 'Akses ditolak.');
@@ -140,11 +150,14 @@ class PosTerminal extends Component
 
     public function clearCart(): void
     {
-        $this->cart         = [];
-        $this->discount     = 0;
-        $this->paid_amount  = 0;
+        $this->cart          = [];
+        $this->discount      = 0;
+        $this->paid_amount   = 0;
         $this->customer_name = '';
-        $this->last_sale    = null;
+        $this->table_number  = '';
+        $this->order_notes   = '';
+        $this->receiptTab    = 'customer';
+        $this->last_sale     = null;
     }
 
     // ── Totals ─────────────────────────────────────────────────
@@ -243,6 +256,9 @@ class PosTerminal extends Component
             $sale        = $saleService->createSale(
                 [
                     'customer_name'  => $this->customer_name ?: 'Pelanggan Umum',
+                    'table_number'   => $this->table_number ?: null,
+                    'order_notes'    => $this->order_notes ?: null,
+                    'kitchen_status' => 'pending',
                     'discount'       => $this->discount,
                     'paid_amount'    => $this->payment_method === 'cash' ? $this->paid_amount : $total,
                     'payment_method' => $this->payment_method,
@@ -252,7 +268,13 @@ class PosTerminal extends Component
             );
 
             $this->last_sale = [
+                'id'             => $sale->id,
                 'invoice_number' => $sale->invoice_number,
+                'table_number'   => $sale->table_number,
+                'order_notes'    => $sale->order_notes,
+                'kitchen_status' => $sale->kitchen_status,
+                'customer_name'  => $sale->customer_name,
+                'cashier_name'   => auth()->user()?->name ?? 'Kasir',
                 'total'          => $sale->total,
                 'paid_amount'    => $sale->paid_amount,
                 'change_amount'  => $sale->change_amount,
@@ -261,6 +283,7 @@ class PosTerminal extends Component
                 'items'          => $sale->items->map(fn($i) => [
                     'name'     => $i->product_name,
                     'qty'      => $i->quantity,
+                    'notes'    => $i->notes,
                     'subtotal' => $i->subtotal,
                 ])->toArray(),
             ];
@@ -271,14 +294,37 @@ class PosTerminal extends Component
             $this->discount            = 0;
             $this->paid_amount         = 0;
             $this->customer_name       = '';
+            $this->table_number        = '';
+            $this->order_notes         = '';
+            $this->receiptTab          = 'customer';
             $this->isCheckoutModalOpen = false;
             $this->orderNumber         = (string) rand(1001, 9999);
 
-            $this->notify('success', "Transaksi {$sale->invoice_number} berhasil!");
+            $this->notify('success', "Transaksi {$sale->invoice_number} berhasil! Pesanan otomatis masuk ke Layar Dapur.");
 
         } catch (\Exception $e) {
             $this->notify('danger', 'Transaksi Gagal: ' . $e->getMessage());
         }
+    }
+
+    public function setReceiptTab(string $tab): void
+    {
+        $this->receiptTab = $tab;
+    }
+
+    public function markKitchenPrinted(int $saleId): void
+    {
+        Sale::where('id', $saleId)->update(['kitchen_printed_at' => now()]);
+        if (isset($this->last_sale['id']) && $this->last_sale['id'] === $saleId) {
+            $this->last_sale['kitchen_printed_at'] = now()->format('H:i');
+        }
+    }
+
+    public function getActiveKitchenCountProperty(): int
+    {
+        return Sale::whereIn('kitchen_status', ['pending', 'cooking', 'ready'])
+            ->whereDate('created_at', today())
+            ->count();
     }
 
     // ── Data Queries ───────────────────────────────────────────

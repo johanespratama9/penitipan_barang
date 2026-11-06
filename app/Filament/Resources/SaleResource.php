@@ -57,14 +57,17 @@ class SaleResource extends Resource
                     ->schema([
                         TextInput::make('invoice_number')->label('No. Invoice')->disabled(),
                         TextInput::make('customer_name')->label('Nama Pelanggan')->disabled(),
+                        TextInput::make('table_number')->label('No. Meja')->placeholder('Bawa Pulang / -')->disabled(),
                         TextInput::make('cashier.name')->label('Kasir')->disabled(),
                         TextInput::make('payment_method')->label('Metode Pembayaran')->disabled(),
+                        TextInput::make('kitchen_status')->label('Status Dapur')->formatStateUsing(fn (?string $state): string => match ($state) { 'pending' => 'Menunggu Dapur', 'cooking' => 'Sedang Dimasak', 'ready' => 'Siap Saji', 'completed' => 'All Selesai', default => '-' })->disabled(),
                         TextInput::make('subtotal')->label('Subtotal')->numeric()->prefix('Rp')->disabled(),
                         TextInput::make('discount')->label('Diskon')->numeric()->prefix('Rp')->disabled(),
                         TextInput::make('total')->label('Total Akhir')->numeric()->prefix('Rp')->disabled(),
                         TextInput::make('paid_amount')->label('Jumlah Dibayar')->numeric()->prefix('Rp')->disabled(),
                         TextInput::make('change_amount')->label('Kembalian')->numeric()->prefix('Rp')->disabled(),
-                        TextInput::make('status')->label('Status')->disabled(),
+                        TextInput::make('status')->label('Status Transaksi')->disabled(),
+                        TextInput::make('order_notes')->label('Catatan Pesanan Dapur')->placeholder('Tidak ada catatan')->columnSpanFull()->disabled(),
                     ])
                     ->columns(3),
 
@@ -113,6 +116,33 @@ class SaleResource extends Resource
                     ->placeholder('Umum')
                     ->searchable(),
 
+                TextColumn::make('table_number')
+                    ->label('Meja')
+                    ->placeholder('-')
+                    ->badge()
+                    ->color('gray')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('kitchen_status')
+                    ->label('Dapur')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'pending'   => 'warning',
+                        'cooking'   => 'info',
+                        'ready'     => 'success',
+                        'completed' => 'gray',
+                        default     => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'pending'   => '⏳ Menunggu',
+                        'cooking'   => '🔥 Dimasak',
+                        'ready'     => '🔔 Siap Saji',
+                        'completed' => '✓ All Selesai',
+                        default     => '-',
+                    })
+                    ->sortable(),
+
                 TextColumn::make('total')
                     ->label('Total Transaksi')
                     ->money('IDR', locale: 'id_ID')
@@ -148,6 +178,15 @@ class SaleResource extends Resource
                         'pending' => 'Pending',
                         'cancelled' => 'Cancelled',
                         'refunded' => 'Refunded',
+                    ]),
+
+                SelectFilter::make('kitchen_status')
+                    ->label('Status Dapur')
+                    ->options([
+                        'pending'   => 'Menunggu Dapur',
+                        'cooking'   => 'Sedang Dimasak',
+                        'ready'     => 'Siap Disajikan',
+                        'completed' => 'All Selesai',
                     ]),
 
                 SelectFilter::make('payment_method')

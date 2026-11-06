@@ -76,25 +76,25 @@ class PosPageTest extends TestCase
         ]);
     }
 
-    /** Admin bisa render /admin/pos dan melihat string Scan Kamera HP */
+    /** Admin bisa render /dasbor/pos dan melihat string Scan Kamera HP */
     public function test_kasir_can_render_pos_page(): void
     {
         $this->actingAs($this->cashier);
-        // Kasir tidak lagi mengakses /admin/pos (akan di-redirect ke /pos)
-        // Test ini dijalankan sebagai admin yang masih bisa akses /admin/pos
+        // Kasir tidak lagi mengakses /dasbor/pos (akan di-redirect ke /pos)
+        // Test ini dijalankan sebagai admin yang masih bisa akses /dasbor/pos
         $this->actingAs($this->admin);
 
-        $response = $this->get('/admin/pos');
+        $response = $this->get('/dasbor/pos');
         $response->assertStatus(200);
         $response->assertSee('Scan Kamera HP');
     }
 
-    /** Kasir yang mencoba akses /admin/pos akan di-redirect ke /pos */
+    /** Kasir yang mencoba akses /dasbor/pos akan di-redirect ke /pos */
     public function test_kasir_redirected_from_admin_pos_to_pos_terminal(): void
     {
         $this->actingAs($this->cashier);
 
-        $response = $this->get('/admin/pos');
+        $response = $this->get('/dasbor/pos');
         $response->assertRedirect('/pos');
     }
 
@@ -142,7 +142,7 @@ class PosPageTest extends TestCase
         // Gunakan admin untuk akses /admin/pos
         $this->actingAs($this->admin);
 
-        $response = $this->get('/admin/pos');
+        $response = $this->get('/dasbor/pos');
         $response->assertStatus(200);
         $response->assertSee('SARINAH STREET');
         $response->assertSee('ORDER #');

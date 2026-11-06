@@ -16,14 +16,22 @@ class RedirectKasirToPos
     {
         $user = auth()->user();
 
-        if (
-            $user !== null
-            && $user->hasRole('kasir')
-            && ! $user->hasAnyRole(['admin', 'super_admin'])
-            // Allow dasbor/login and dasbor/logout so kasir can still authenticate/logout
-            && ! $request->is('dasbor/login', 'dasbor/logout', 'dasbor/login/*')
-        ) {
-            return redirect('/pos');
+        if ($user !== null && ! $user->hasAnyRole(['admin', 'super_admin'])) {
+            // 1. Role Kasir diarahkan ke /pos (kecuali rute auth & dapur)
+            if (
+                $user->hasRole('kasir')
+                && ! $request->is('dasbor/login', 'dasbor/logout', 'dasbor/login/*', 'dasbor/dapur', 'dasbor/dapur/*')
+            ) {
+                return redirect('/pos');
+            }
+
+            // 2. Role Dapur dikunci hanya ke Layar Dapur (/dapur atau /dasbor/dapur)
+            if (
+                $user->hasRole('dapur')
+                && ! $request->is('dasbor/login', 'dasbor/logout', 'dasbor/login/*', 'dasbor/dapur', 'dasbor/dapur/*')
+            ) {
+                return redirect()->route('kitchen.display');
+            }
         }
 
         return $next($request);

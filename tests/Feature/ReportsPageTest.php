@@ -67,7 +67,7 @@ class ReportsPageTest extends TestCase
 
     public function test_admin_can_access_reports_page(): void
     {
-        $response = $this->actingAs($this->admin)->get('/admin/reports-page');
+        $response = $this->actingAs($this->admin)->get('/dasbor/reports-page');
 
         $response->assertStatus(200);
         $response->assertSee('Laporan Penjualan');

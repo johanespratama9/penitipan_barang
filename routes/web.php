@@ -3,6 +3,7 @@
 use App\Http\Controllers\DigitalMenuController;
 use App\Http\Controllers\PenitipAuthController;
 use App\Http\Controllers\PublicConsignmentController;
+use App\Livewire\KitchenDisplay;
 use App\Livewire\PosTerminal;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,7 @@ Route::get('/login', fn() => redirect('/dasbor/login'))->name('login');
 
 Route::middleware(['auth:web'])->group(function () {
     Route::get('/pos', PosTerminal::class)->name('pos.terminal');
+    Route::get('/dapur', KitchenDisplay::class)->name('kitchen.display');
 });
 
 // Logout route umum (support GET & POST)

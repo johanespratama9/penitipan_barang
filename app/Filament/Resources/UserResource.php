@@ -53,6 +53,11 @@ class UserResource extends Resource
         return 1;
     }
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasAnyRole(['admin', 'super_admin']) ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -101,6 +106,7 @@ class UserResource extends Resource
                                 'super_admin' => 'Super Admin',
                                 'admin'       => 'Admin',
                                 'kasir'       => 'Kasir',
+                                'dapur'       => 'Dapur / Koki',
                                 'penitip'     => 'Penitip',
                                 default       => $record->name,
                             })
@@ -134,6 +140,7 @@ class UserResource extends Resource
                         'super_admin' => 'danger',
                         'admin'       => 'warning',
                         'kasir'       => 'info',
+                        'dapur'       => 'primary',
                         'penitip'     => 'success',
                         default       => 'gray',
                     })
@@ -141,6 +148,7 @@ class UserResource extends Resource
                         'super_admin' => 'Super Admin',
                         'admin'       => 'Admin',
                         'kasir'       => 'Kasir',
+                        'dapur'       => 'Dapur / Koki',
                         'penitip'     => 'Penitip',
                         default       => $state,
                     }),

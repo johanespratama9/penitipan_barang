@@ -150,12 +150,12 @@ class PosTerminalTest extends TestCase
         $this->assertEquals(8, $this->product->fresh()->stock);
     }
 
-    /** Kasir diarahkan ke /pos saat mencoba akses /admin */
+    /** Kasir diarahkan ke /pos saat mencoba akses /dasbor */
     public function test_kasir_redirected_from_admin_to_pos(): void
     {
         $this->actingAs($this->kasir);
 
-        $response = $this->get('/admin');
+        $response = $this->get('/dasbor');
 
         // Kasir-only user harus di-redirect ke /pos
         $response->assertRedirect('/pos');

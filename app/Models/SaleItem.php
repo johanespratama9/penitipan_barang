@@ -14,6 +14,8 @@ class SaleItem extends Model
         'sale_id',
         'product_id',
         'product_name',
+        'notes',
+        'item_status',
         'quantity',
         'purchase_price',
         'selling_price',
@@ -41,4 +43,3 @@ class SaleItem extends Model
         return $this->belongsTo(Product::class);
     }
 }
-
